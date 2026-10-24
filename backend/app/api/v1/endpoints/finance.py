@@ -123,13 +123,13 @@ def update_so_status(so_id: str, update: SalesOrderStatusUpdate):
     valid_transitions = {
         "DRAFT": ["CONFIRMED", "CANCELLED"],
         "CONFIRMED": ["PARTIALLY_DELIVERED", "FULLY_DELIVERED", "INVOICED", "CANCELLED"],
-        "PARTIALLY_DELIVERED": ["FULLY_DELIVERED"],
-        "FULLY_DELIVERED": ["INVOICED"],
-        "INVOICED": ["PAID", "PARTIALLY_PAID"],
-        "PARTIALLY_PAID": ["PAID"],
-        "PAID": ["CLOSED"],
+        "PARTIALLY_DELIVERED": ["FULLY_DELIVERED", "INVOICED", "CANCELLED"],
+        "FULLY_DELIVERED": ["INVOICED", "PAID", "CANCELLED"],
+        "INVOICED": ["PAID", "PARTIALLY_PAID", "CLOSED", "CANCELLED"],
+        "PARTIALLY_PAID": ["PAID", "CLOSED", "CANCELLED"],
+        "PAID": ["CLOSED", "CANCELLED"],
         "CLOSED": [],
-        "CANCELLED": [],
+        "CANCELLED": ["DRAFT"],
     }
 
     current = existing.get("status", "DRAFT")
@@ -140,7 +140,27 @@ def update_so_status(so_id: str, update: SalesOrderStatusUpdate):
             detail=f"Cannot transition from {current} to {update.status}. Allowed: {allowed}"
         )
 
-    so_repo.update(so_id, {"status": update.status})
+    update_data = {"status": update.status}
+    if update.status == "FULLY_DELIVERED":
+        items = so_items_repo.get_all(filters={"so_id": so_id}, limit=100)
+        for item in items:
+            so_items_repo.update(item["id"], {"delivered_qty": item.get("quantity", 0.0)})
+    elif update.status == "PARTIALLY_DELIVERED":
+        items = so_items_repo.get_all(filters={"so_id": so_id}, limit=100)
+        for item in items:
+            if item.get("delivered_qty", 0.0) == 0.0:
+                so_items_repo.update(item["id"], {"delivered_qty": round(item.get("quantity", 0.0) * 0.5, 2)})
+    elif update.status == "PAID":
+        grand_total = existing.get("grand_total", 0.0)
+        update_data["paid_amount"] = grand_total
+        update_data["outstanding_amount"] = 0.0
+    elif update.status == "PARTIALLY_PAID":
+        grand_total = existing.get("grand_total", 0.0)
+        half = round(grand_total * 0.5, 2)
+        update_data["paid_amount"] = half
+        update_data["outstanding_amount"] = round(grand_total - half, 2)
+
+    so_repo.update(so_id, update_data)
     updated = so_repo.get_by_id(so_id)
     items = so_items_repo.get_all(filters={"so_id": so_id}, limit=100)
     return ApiResponse(
