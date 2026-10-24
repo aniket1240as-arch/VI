@@ -119,14 +119,14 @@ def update_po_status(po_id: str, update: PurchaseOrderStatusUpdate):
 
     valid_transitions = {
         "DRAFT": ["PENDING_APPROVAL", "CANCELLED"],
-        "PENDING_APPROVAL": ["APPROVED", "REJECTED", "DRAFT"],
-        "APPROVED": ["SENT", "CANCELLED"],
-        "REJECTED": ["DRAFT"],
+        "PENDING_APPROVAL": ["APPROVED", "REJECTED", "DRAFT", "CANCELLED"],
+        "APPROVED": ["SENT", "PARTIALLY_RECEIVED", "FULLY_RECEIVED", "CANCELLED"],
+        "REJECTED": ["DRAFT", "CANCELLED"],
         "SENT": ["PARTIALLY_RECEIVED", "FULLY_RECEIVED", "CANCELLED"],
-        "PARTIALLY_RECEIVED": ["FULLY_RECEIVED"],
-        "FULLY_RECEIVED": ["CLOSED"],
+        "PARTIALLY_RECEIVED": ["FULLY_RECEIVED", "CLOSED", "CANCELLED"],
+        "FULLY_RECEIVED": ["CLOSED", "CANCELLED"],
         "CLOSED": [],
-        "CANCELLED": [],
+        "CANCELLED": ["DRAFT"],
     }
 
     current = existing.get("status", "DRAFT")
@@ -145,6 +145,15 @@ def update_po_status(po_id: str, update: PurchaseOrderStatusUpdate):
         update_data["approved_date"] = dt.date.today().isoformat()
     elif update.status == "REJECTED":
         update_data["approval_status"] = "REJECTED"
+    elif update.status == "FULLY_RECEIVED":
+        items = po_items_repo.get_all(filters={"po_id": po_id}, limit=100)
+        for item in items:
+            po_items_repo.update(item["id"], {"received_qty": item.get("quantity", 0.0)})
+    elif update.status == "PARTIALLY_RECEIVED":
+        items = po_items_repo.get_all(filters={"po_id": po_id}, limit=100)
+        for item in items:
+            if item.get("received_qty", 0.0) == 0.0:
+                po_items_repo.update(item["id"], {"received_qty": round(item.get("quantity", 0.0) * 0.5, 2)})
 
     po_repo.update(po_id, update_data)
     updated = po_repo.get_by_id(po_id)

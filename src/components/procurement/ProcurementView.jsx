@@ -63,7 +63,12 @@ export default function ProcurementView() {
 
   const handleStatusUpdate = async (poId, newStatus) => {
     const result = await api.updatePOStatus(poId, { status: newStatus });
-    if (result) loadData();
+    if (result) {
+      if (selectedPO && selectedPO.id === poId) {
+        setSelectedPO(prev => (prev ? { ...prev, status: newStatus } : null));
+      }
+      loadData();
+    }
   };
 
   const handleCreateGRN = async (formData) => {
@@ -331,43 +336,182 @@ function PurchaseOrderList({ orders, statusFilter, onFilterChange, onSelect, onS
                   </span>
                 </td>
                 <td className="px-4 py-3">
-                  <div className="flex items-center space-x-1">
+                  <div className="flex items-center space-x-1 flex-wrap gap-y-1">
                     {po.status === 'DRAFT' && (
-                      <button
-                        onClick={() => onStatusUpdate(po.id, 'PENDING_APPROVAL')}
-                        className="text-[10px] font-bold text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 px-2 py-1 rounded transition"
-                      >
-                        Submit
-                      </button>
+                      <>
+                        <button
+                          onClick={() => onStatusUpdate(po.id, 'PENDING_APPROVAL')}
+                          className="text-[10px] font-bold text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 px-2 py-1 rounded transition whitespace-nowrap"
+                          title="Submit for Approval"
+                        >
+                          Submit
+                        </button>
+                        <button
+                          onClick={() => onStatusUpdate(po.id, 'CANCELLED')}
+                          className="text-[10px] font-bold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-2 py-1 rounded transition whitespace-nowrap"
+                          title="Cancel PO"
+                        >
+                          Cancel
+                        </button>
+                      </>
                     )}
                     {po.status === 'PENDING_APPROVAL' && (
                       <>
                         <button
                           onClick={() => onStatusUpdate(po.id, 'APPROVED')}
-                          className="text-[10px] font-bold text-green-600 hover:text-green-700 bg-green-50 hover:bg-green-100 px-2 py-1 rounded transition"
+                          className="text-[10px] font-bold text-green-600 hover:text-green-700 bg-green-50 hover:bg-green-100 px-2 py-1 rounded transition whitespace-nowrap"
+                          title="Approve PO"
                         >
                           Approve
                         </button>
                         <button
                           onClick={() => onStatusUpdate(po.id, 'REJECTED')}
-                          className="text-[10px] font-bold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-1 rounded transition"
+                          className="text-[10px] font-bold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-1 rounded transition whitespace-nowrap"
+                          title="Reject PO"
                         >
                           Reject
+                        </button>
+                        <button
+                          onClick={() => onStatusUpdate(po.id, 'CANCELLED')}
+                          className="text-[10px] font-bold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-2 py-1 rounded transition whitespace-nowrap"
+                          title="Cancel PO"
+                        >
+                          Cancel
                         </button>
                       </>
                     )}
                     {po.status === 'APPROVED' && (
+                      <>
+                        <button
+                          onClick={() => onStatusUpdate(po.id, 'SENT')}
+                          className="text-[10px] font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded transition flex items-center space-x-1 whitespace-nowrap"
+                          title="Send to Supplier"
+                        >
+                          <Send className="w-3 h-3" />
+                          <span>Send</span>
+                        </button>
+                        <button
+                          onClick={() => onStatusUpdate(po.id, 'FULLY_RECEIVED')}
+                          className="text-[10px] font-bold text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-2 py-1 rounded transition whitespace-nowrap"
+                          title="Receive All Items"
+                        >
+                          Receive Full
+                        </button>
+                        <button
+                          onClick={() => onStatusUpdate(po.id, 'PARTIALLY_RECEIVED')}
+                          className="text-[10px] font-bold text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 px-2 py-1 rounded transition whitespace-nowrap"
+                          title="Receive Partial Items"
+                        >
+                          Receive Partial
+                        </button>
+                        <button
+                          onClick={() => onStatusUpdate(po.id, 'CANCELLED')}
+                          className="text-[10px] font-bold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-2 py-1 rounded transition whitespace-nowrap"
+                          title="Cancel PO"
+                        >
+                          Cancel
+                        </button>
+                      </>
+                    )}
+                    {po.status === 'SENT' && (
+                      <>
+                        <button
+                          onClick={() => onStatusUpdate(po.id, 'PARTIALLY_RECEIVED')}
+                          className="text-[10px] font-bold text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 px-2 py-1 rounded transition whitespace-nowrap"
+                          title="Receive Partial Shipment"
+                        >
+                          Receive Partial
+                        </button>
+                        <button
+                          onClick={() => onStatusUpdate(po.id, 'FULLY_RECEIVED')}
+                          className="text-[10px] font-bold text-green-600 hover:text-green-700 bg-green-50 hover:bg-green-100 px-2 py-1 rounded transition whitespace-nowrap"
+                          title="Receive Full Shipment"
+                        >
+                          Receive Full
+                        </button>
+                        <button
+                          onClick={() => onStatusUpdate(po.id, 'CANCELLED')}
+                          className="text-[10px] font-bold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-2 py-1 rounded transition whitespace-nowrap"
+                          title="Cancel PO"
+                        >
+                          Cancel
+                        </button>
+                      </>
+                    )}
+                    {po.status === 'PARTIALLY_RECEIVED' && (
+                      <>
+                        <button
+                          onClick={() => onStatusUpdate(po.id, 'FULLY_RECEIVED')}
+                          className="text-[10px] font-bold text-green-600 hover:text-green-700 bg-green-50 hover:bg-green-100 px-2 py-1 rounded transition whitespace-nowrap"
+                          title="Complete Receiving Remaining Items"
+                        >
+                          Receive Full
+                        </button>
+                        <button
+                          onClick={() => onStatusUpdate(po.id, 'CLOSED')}
+                          className="text-[10px] font-bold text-slate-600 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded transition whitespace-nowrap"
+                          title="Close Short Shipment"
+                        >
+                          Close
+                        </button>
+                        <button
+                          onClick={() => onStatusUpdate(po.id, 'CANCELLED')}
+                          className="text-[10px] font-bold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-2 py-1 rounded transition whitespace-nowrap"
+                          title="Cancel Balance"
+                        >
+                          Cancel
+                        </button>
+                      </>
+                    )}
+                    {po.status === 'FULLY_RECEIVED' && (
+                      <>
+                        <button
+                          onClick={() => onStatusUpdate(po.id, 'CLOSED')}
+                          className="text-[10px] font-bold text-slate-600 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded transition whitespace-nowrap"
+                          title="Close Completed PO"
+                        >
+                          Close
+                        </button>
+                        <button
+                          onClick={() => onStatusUpdate(po.id, 'CANCELLED')}
+                          className="text-[10px] font-bold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-2 py-1 rounded transition whitespace-nowrap"
+                          title="Cancel PO"
+                        >
+                          Cancel
+                        </button>
+                      </>
+                    )}
+                    {po.status === 'REJECTED' && (
+                      <>
+                        <button
+                          onClick={() => onStatusUpdate(po.id, 'DRAFT')}
+                          className="text-[10px] font-bold text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 px-2 py-1 rounded transition whitespace-nowrap"
+                          title="Reopen as Draft"
+                        >
+                          Reopen
+                        </button>
+                        <button
+                          onClick={() => onStatusUpdate(po.id, 'CANCELLED')}
+                          className="text-[10px] font-bold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-2 py-1 rounded transition whitespace-nowrap"
+                          title="Cancel PO"
+                        >
+                          Cancel
+                        </button>
+                      </>
+                    )}
+                    {po.status === 'CANCELLED' && (
                       <button
-                        onClick={() => onStatusUpdate(po.id, 'SENT')}
-                        className="text-[10px] font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded transition flex items-center space-x-1"
+                        onClick={() => onStatusUpdate(po.id, 'DRAFT')}
+                        className="text-[10px] font-bold text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 px-2 py-1 rounded transition whitespace-nowrap"
+                        title="Reopen as Draft"
                       >
-                        <Send className="w-3 h-3" />
-                        <span>Send</span>
+                        Reopen
                       </button>
                     )}
                     <button
                       onClick={() => onSelect(po)}
                       className="text-[10px] font-bold text-slate-500 hover:text-[#1E40AF] bg-slate-50 hover:bg-blue-50 px-2 py-1 rounded transition"
+                      title="View Details"
                     >
                       <Eye className="w-3.5 h-3.5" />
                     </button>
@@ -859,6 +1003,167 @@ function PODetailDrawer({ po, onClose, onStatusUpdate }) {
               <p className="text-xs text-slate-600">{po.remarks}</p>
             </div>
           )}
+
+          {/* Lifecycle Action Bar */}
+          <div className="border-t border-slate-200 pt-4">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">PO Lifecycle Actions</p>
+            <div className="flex flex-wrap gap-2">
+              {po.status === 'DRAFT' && (
+                <>
+                  <button
+                    onClick={() => onStatusUpdate(po.id, 'PENDING_APPROVAL')}
+                    className="px-3 py-1.5 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 rounded-lg transition"
+                  >
+                    Submit for Approval
+                  </button>
+                  <button
+                    onClick={() => onStatusUpdate(po.id, 'CANCELLED')}
+                    className="px-3 py-1.5 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-lg transition"
+                  >
+                    Cancel PO
+                  </button>
+                </>
+              )}
+              {po.status === 'PENDING_APPROVAL' && (
+                <>
+                  <button
+                    onClick={() => onStatusUpdate(po.id, 'APPROVED')}
+                    className="px-3 py-1.5 text-xs font-bold text-white bg-green-600 hover:bg-green-700 rounded-lg transition"
+                  >
+                    Approve PO
+                  </button>
+                  <button
+                    onClick={() => onStatusUpdate(po.id, 'REJECTED')}
+                    className="px-3 py-1.5 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition"
+                  >
+                    Reject PO
+                  </button>
+                  <button
+                    onClick={() => onStatusUpdate(po.id, 'CANCELLED')}
+                    className="px-3 py-1.5 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-lg transition"
+                  >
+                    Cancel PO
+                  </button>
+                </>
+              )}
+              {po.status === 'APPROVED' && (
+                <>
+                  <button
+                    onClick={() => onStatusUpdate(po.id, 'SENT')}
+                    className="px-3 py-1.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition flex items-center space-x-1"
+                  >
+                    <Send className="w-3.5 h-3.5 mr-1" />
+                    <span>Send to Supplier</span>
+                  </button>
+                  <button
+                    onClick={() => onStatusUpdate(po.id, 'FULLY_RECEIVED')}
+                    className="px-3 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition"
+                  >
+                    Receive Full Shipment
+                  </button>
+                  <button
+                    onClick={() => onStatusUpdate(po.id, 'PARTIALLY_RECEIVED')}
+                    className="px-3 py-1.5 text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-lg transition"
+                  >
+                    Receive Partial
+                  </button>
+                  <button
+                    onClick={() => onStatusUpdate(po.id, 'CANCELLED')}
+                    className="px-3 py-1.5 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-lg transition"
+                  >
+                    Cancel PO
+                  </button>
+                </>
+              )}
+              {po.status === 'SENT' && (
+                <>
+                  <button
+                    onClick={() => onStatusUpdate(po.id, 'PARTIALLY_RECEIVED')}
+                    className="px-3 py-1.5 text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-lg transition"
+                  >
+                    Receive Partial Shipment
+                  </button>
+                  <button
+                    onClick={() => onStatusUpdate(po.id, 'FULLY_RECEIVED')}
+                    className="px-3 py-1.5 text-xs font-bold text-white bg-green-600 hover:bg-green-700 rounded-lg transition"
+                  >
+                    Receive Full Shipment
+                  </button>
+                  <button
+                    onClick={() => onStatusUpdate(po.id, 'CANCELLED')}
+                    className="px-3 py-1.5 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-lg transition"
+                  >
+                    Cancel PO
+                  </button>
+                </>
+              )}
+              {po.status === 'PARTIALLY_RECEIVED' && (
+                <>
+                  <button
+                    onClick={() => onStatusUpdate(po.id, 'FULLY_RECEIVED')}
+                    className="px-3 py-1.5 text-xs font-bold text-white bg-green-600 hover:bg-green-700 rounded-lg transition"
+                  >
+                    Receive Remaining (Full)
+                  </button>
+                  <button
+                    onClick={() => onStatusUpdate(po.id, 'CLOSED')}
+                    className="px-3 py-1.5 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition"
+                  >
+                    Close Order
+                  </button>
+                  <button
+                    onClick={() => onStatusUpdate(po.id, 'CANCELLED')}
+                    className="px-3 py-1.5 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-lg transition"
+                  >
+                    Cancel Balance
+                  </button>
+                </>
+              )}
+              {po.status === 'FULLY_RECEIVED' && (
+                <>
+                  <button
+                    onClick={() => onStatusUpdate(po.id, 'CLOSED')}
+                    className="px-3 py-1.5 text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg transition"
+                  >
+                    Close Completed PO
+                  </button>
+                  <button
+                    onClick={() => onStatusUpdate(po.id, 'CANCELLED')}
+                    className="px-3 py-1.5 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-lg transition"
+                  >
+                    Cancel
+                  </button>
+                </>
+              )}
+              {po.status === 'REJECTED' && (
+                <>
+                  <button
+                    onClick={() => onStatusUpdate(po.id, 'DRAFT')}
+                    className="px-3 py-1.5 text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-lg transition"
+                  >
+                    Reopen as Draft
+                  </button>
+                  <button
+                    onClick={() => onStatusUpdate(po.id, 'CANCELLED')}
+                    className="px-3 py-1.5 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-lg transition"
+                  >
+                    Cancel PO
+                  </button>
+                </>
+              )}
+              {po.status === 'CANCELLED' && (
+                <button
+                  onClick={() => onStatusUpdate(po.id, 'DRAFT')}
+                  className="px-3 py-1.5 text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-lg transition"
+                >
+                  Reopen as Draft
+                </button>
+              )}
+              {po.status === 'CLOSED' && (
+                <span className="text-xs text-slate-400 italic">This purchase order is completed and closed.</span>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
