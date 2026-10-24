@@ -18,6 +18,8 @@ import PerformanceView from '../performance/PerformanceView';
 import EmployeePortal from '../portal/EmployeePortal';
 import { useAuth } from '../../context/AuthContext';
 import ErrorBoundary from '../common/ErrorBoundary';
+import ProcurementView from '../procurement/ProcurementView';
+import FinanceView from '../finance/FinanceView';
 
 export default function AppShell() {
   const { user } = useAuth();
@@ -34,6 +36,9 @@ export default function AppShell() {
       case 'hr_dashboard_tab': return 'HR & WORKFORCE DASHBOARD';
       case 'employees': return 'SOLEX EMPLOYEE DIRECTORY';
       case 'export': return 'GLOBAL EXPORT OPERATIONS';
+      case 'procurement': return 'PROCUREMENT & PURCHASE ORDERS';
+      case 'finance':
+      case 'sales_orders': return 'FINANCE & GENERAL LEDGER';
       case 'import': return 'RAW PROCUREMENT & SOURCING';
       case 'transactions': return 'COMMERCIAL TRADE TRANSACTIONS';
       case 'attendance': return 'ATTENDANCE & LEAVE MASTER';
@@ -104,6 +109,11 @@ export default function AppShell() {
         return <EmployeeList />;
       case 'export':
         return <TradeView type="export" />;
+      case 'procurement':
+        return <ProcurementView />;
+      case 'finance':
+      case 'sales_orders':
+        return <FinanceView />;
       case 'import':
         return <TradeView type="import" />;
       case 'transactions':

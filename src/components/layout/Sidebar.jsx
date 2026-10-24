@@ -23,7 +23,8 @@ import {
   Building2,
   Wheat,
   Container,
-  TrendingUp
+  TrendingUp,
+  BookOpen
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -63,7 +64,9 @@ export default function Sidebar({ activeTab, onSelectTab, isCollapsed, onToggleC
       label: 'GLOBAL TRADE & LOGISTICS',
       items: [
         { id: 'export', label: 'EXPORT OPERATIONS', icon: FileText, hasSubmenu: true },
-        { id: 'import', label: 'RAW PROCUREMENT', icon: ShoppingCart, hasSubmenu: true },
+        { id: 'procurement', label: 'PROCUREMENT & PO', icon: ShoppingCart, hasSubmenu: true },
+        { id: 'finance', label: 'FINANCE & GL', icon: BookOpen, hasSubmenu: true },
+        { id: 'import', label: 'RAW PROCUREMENT', icon: Truck, hasSubmenu: true },
         { id: 'transactions', label: 'TRADE TRANSACTIONS', icon: DollarSign, hasSubmenu: true },
       ]
     },

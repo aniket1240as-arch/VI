@@ -449,6 +449,238 @@ CREATE TABLE IF NOT EXISTS timesheets (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- ═══════════════════════════════════════════════════════════════
+-- MODULE 13: PROCUREMENT
+-- ═══════════════════════════════════════════════════════════════
+
+-- Purchase Orders (Header)
+CREATE TABLE IF NOT EXISTS purchase_orders (
+    id VARCHAR PRIMARY KEY,
+    po_number VARCHAR UNIQUE NOT NULL,
+    supplier_id VARCHAR,
+    supplier_name VARCHAR NOT NULL,
+    order_date VARCHAR NOT NULL,
+    expected_delivery_date VARCHAR,
+    currency VARCHAR DEFAULT 'USD',
+    exchange_rate DOUBLE DEFAULT 1.0,
+    payment_terms VARCHAR DEFAULT 'Net 30',
+    incoterms VARCHAR DEFAULT 'FOB',
+    incoterms_location VARCHAR,
+    delivery_warehouse VARCHAR DEFAULT 'Hanoi HQ',
+    subtotal DOUBLE DEFAULT 0.0,
+    tax_amount DOUBLE DEFAULT 0.0,
+    shipping_charges DOUBLE DEFAULT 0.0,
+    grand_total DOUBLE DEFAULT 0.0,
+    status VARCHAR DEFAULT 'DRAFT',
+    approval_status VARCHAR DEFAULT 'PENDING',
+    approved_by VARCHAR,
+    approved_date VARCHAR,
+    remarks VARCHAR,
+    created_by VARCHAR DEFAULT 'admin',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Purchase Order Line Items
+CREATE TABLE IF NOT EXISTS purchase_order_items (
+    id VARCHAR PRIMARY KEY,
+    po_id VARCHAR NOT NULL,
+    item_code VARCHAR,
+    item_name VARCHAR NOT NULL,
+    description VARCHAR,
+    quantity DOUBLE DEFAULT 0.0,
+    received_qty DOUBLE DEFAULT 0.0,
+    uom VARCHAR DEFAULT 'MT',
+    rate DOUBLE DEFAULT 0.0,
+    discount_percent DOUBLE DEFAULT 0.0,
+    amount DOUBLE DEFAULT 0.0,
+    quality_grade VARCHAR,
+    required_by_date VARCHAR,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Goods Receipt Notes (Header)
+CREATE TABLE IF NOT EXISTS goods_receipt_notes (
+    id VARCHAR PRIMARY KEY,
+    grn_number VARCHAR UNIQUE NOT NULL,
+    po_id VARCHAR NOT NULL,
+    po_number VARCHAR NOT NULL,
+    supplier_id VARCHAR,
+    supplier_name VARCHAR NOT NULL,
+    receipt_date VARCHAR NOT NULL,
+    receiving_warehouse VARCHAR DEFAULT 'Hanoi HQ',
+    transporter VARCHAR,
+    vehicle_no VARCHAR,
+    remarks VARCHAR,
+    status VARCHAR DEFAULT 'DRAFT',
+    created_by VARCHAR DEFAULT 'admin',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- GRN Line Items
+CREATE TABLE IF NOT EXISTS grn_items (
+    id VARCHAR PRIMARY KEY,
+    grn_id VARCHAR NOT NULL,
+    po_item_id VARCHAR,
+    item_code VARCHAR,
+    item_name VARCHAR NOT NULL,
+    ordered_qty DOUBLE DEFAULT 0.0,
+    received_qty DOUBLE DEFAULT 0.0,
+    accepted_qty DOUBLE DEFAULT 0.0,
+    rejected_qty DOUBLE DEFAULT 0.0,
+    uom VARCHAR DEFAULT 'MT',
+    batch_no VARCHAR,
+    quality_status VARCHAR DEFAULT 'PENDING',
+    remarks VARCHAR,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ═══════════════════════════════════════════════════════════════
+-- MODULE 14: FINANCE
+-- ═══════════════════════════════════════════════════════════════
+
+-- Sales Orders (Header)
+CREATE TABLE IF NOT EXISTS sales_orders (
+    id VARCHAR PRIMARY KEY,
+    so_number VARCHAR UNIQUE NOT NULL,
+    customer_id VARCHAR,
+    customer_name VARCHAR NOT NULL,
+    customer_po_number VARCHAR,
+    order_date VARCHAR NOT NULL,
+    delivery_date VARCHAR,
+    currency VARCHAR DEFAULT 'USD',
+    exchange_rate DOUBLE DEFAULT 1.0,
+    payment_terms VARCHAR DEFAULT 'LC at Sight',
+    incoterms VARCHAR DEFAULT 'FOB',
+    incoterms_location VARCHAR,
+    salesperson VARCHAR,
+    territory VARCHAR,
+    subtotal DOUBLE DEFAULT 0.0,
+    tax_amount DOUBLE DEFAULT 0.0,
+    shipping_charges DOUBLE DEFAULT 0.0,
+    grand_total DOUBLE DEFAULT 0.0,
+    paid_amount DOUBLE DEFAULT 0.0,
+    outstanding_amount DOUBLE DEFAULT 0.0,
+    status VARCHAR DEFAULT 'DRAFT',
+    remarks VARCHAR,
+    created_by VARCHAR DEFAULT 'admin',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Sales Order Line Items
+CREATE TABLE IF NOT EXISTS sales_order_items (
+    id VARCHAR PRIMARY KEY,
+    so_id VARCHAR NOT NULL,
+    item_code VARCHAR,
+    item_name VARCHAR NOT NULL,
+    description VARCHAR,
+    quantity DOUBLE DEFAULT 0.0,
+    delivered_qty DOUBLE DEFAULT 0.0,
+    billed_qty DOUBLE DEFAULT 0.0,
+    uom VARCHAR DEFAULT 'MT',
+    rate DOUBLE DEFAULT 0.0,
+    discount_percent DOUBLE DEFAULT 0.0,
+    amount DOUBLE DEFAULT 0.0,
+    warehouse VARCHAR DEFAULT 'Hanoi HQ',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Chart of Accounts (General Ledger)
+CREATE TABLE IF NOT EXISTS chart_of_accounts (
+    id VARCHAR PRIMARY KEY,
+    account_code VARCHAR UNIQUE NOT NULL,
+    account_name VARCHAR NOT NULL,
+    account_type VARCHAR NOT NULL,
+    parent_account VARCHAR,
+    is_group BOOLEAN DEFAULT FALSE,
+    currency VARCHAR DEFAULT 'USD',
+    balance DOUBLE DEFAULT 0.0,
+    is_frozen BOOLEAN DEFAULT FALSE,
+    description VARCHAR,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Journal Entries (General Ledger Transactions)
+CREATE TABLE IF NOT EXISTS journal_entries (
+    id VARCHAR PRIMARY KEY,
+    entry_number VARCHAR UNIQUE NOT NULL,
+    entry_date VARCHAR NOT NULL,
+    account_id VARCHAR NOT NULL,
+    account_name VARCHAR NOT NULL,
+    debit DOUBLE DEFAULT 0.0,
+    credit DOUBLE DEFAULT 0.0,
+    party_type VARCHAR,
+    party_name VARCHAR,
+    reference_type VARCHAR,
+    reference_id VARCHAR,
+    narration VARCHAR,
+    created_by VARCHAR DEFAULT 'admin',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Sales Invoices
+CREATE TABLE IF NOT EXISTS sales_invoices (
+    id VARCHAR PRIMARY KEY,
+    invoice_number VARCHAR UNIQUE NOT NULL,
+    customer_id VARCHAR,
+    customer_name VARCHAR NOT NULL,
+    sales_order_id VARCHAR,
+    so_number VARCHAR,
+    invoice_date VARCHAR NOT NULL,
+    due_date VARCHAR NOT NULL,
+    currency VARCHAR DEFAULT 'USD',
+    exchange_rate DOUBLE DEFAULT 1.0,
+    subtotal DOUBLE DEFAULT 0.0,
+    tax_amount DOUBLE DEFAULT 0.0,
+    grand_total DOUBLE DEFAULT 0.0,
+    paid_amount DOUBLE DEFAULT 0.0,
+    outstanding_amount DOUBLE DEFAULT 0.0,
+    status VARCHAR DEFAULT 'DRAFT',
+    payment_terms VARCHAR,
+    remarks VARCHAR,
+    created_by VARCHAR DEFAULT 'admin',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Sales Invoice Line Items
+CREATE TABLE IF NOT EXISTS invoice_items (
+    id VARCHAR PRIMARY KEY,
+    invoice_id VARCHAR NOT NULL,
+    item_code VARCHAR,
+    item_name VARCHAR NOT NULL,
+    description VARCHAR,
+    quantity DOUBLE DEFAULT 0.0,
+    rate DOUBLE DEFAULT 0.0,
+    tax_rate DOUBLE DEFAULT 0.0,
+    tax_amount DOUBLE DEFAULT 0.0,
+    amount DOUBLE DEFAULT 0.0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Payment Entries
+CREATE TABLE IF NOT EXISTS payment_entries (
+    id VARCHAR PRIMARY KEY,
+    payment_number VARCHAR UNIQUE NOT NULL,
+    payment_type VARCHAR NOT NULL,
+    party_type VARCHAR NOT NULL,
+    party_name VARCHAR NOT NULL,
+    party_id VARCHAR,
+    payment_date VARCHAR NOT NULL,
+    mode_of_payment VARCHAR DEFAULT 'Bank Transfer',
+    currency VARCHAR DEFAULT 'USD',
+    paid_amount DOUBLE DEFAULT 0.0,
+    reference_no VARCHAR,
+    reference_date VARCHAR,
+    bank_account VARCHAR,
+    allocated_to_invoice VARCHAR,
+    allocated_invoice_number VARCHAR,
+    remarks VARCHAR,
+    status VARCHAR DEFAULT 'SUBMITTED',
+    created_by VARCHAR DEFAULT 'admin',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 """
 
 def init_db_schema():

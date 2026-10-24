@@ -220,6 +220,166 @@ def seed_database():
                     list(fac)
                 )
 
+        # ═══════════════════════════════════════════════════════════
+        # 14. PURCHASE ORDERS
+        # ═══════════════════════════════════════════════════════════
+        purchase_orders = [
+            ("PO-001", "PO-2026-00101", "SP-201", "Cochin Spices & Plantations Ltd", "2026-09-01", "2026-09-20", "USD", 1.0, "Advance / Escrow", "FOB", "Cochin Port", "Kochi Terminal", 684000.0, 0.0, 0.0, 684000.0, "APPROVED", "APPROVED", "USR-001", "2026-09-02", "Bulk raw spices procurement Q3", "USR-002"),
+            ("PO-002", "PO-2026-00102", "SP-202", "Mekong Delta Milling Federation", "2026-09-05", "2026-09-25", "USD", 1.0, "CAD", "CIF", "Cat Lai Port", "Hanoi HQ", 192000.0, 0.0, 2400.0, 194400.0, "SENT", "APPROVED", "USR-001", "2026-09-06", "DDGS & rice bran for Q4 animal feed production", "USR-002"),
+            ("PO-003", "PO-2026-00103", "SP-201", "Cochin Spices & Plantations Ltd", "2026-10-10", "2026-10-30", "USD", 1.0, "Net 30", "FOB", "Cochin Port", "Kochi Terminal", 112500.0, 0.0, 0.0, 112500.0, "DRAFT", "PENDING", None, None, "Green Cardamom 8mm+ re-order", "USR-002"),
+            ("PO-004", "PO-2026-00104", "SP-202", "Mekong Delta Milling Federation", "2026-10-15", "2026-11-05", "USD", 1.0, "CAD", "FOB", "Ho Chi Minh Port", "Hai Phong Hub", 460000.0, 0.0, 1800.0, 461800.0, "PENDING_APPROVAL", "PENDING", None, None, "Soybean meal de-hulled 48% protein", "USR-001"),
+        ]
+        for po in purchase_orders:
+            db_manager.execute_write(
+                "INSERT INTO purchase_orders (id, po_number, supplier_id, supplier_name, order_date, expected_delivery_date, currency, exchange_rate, payment_terms, incoterms, incoterms_location, delivery_warehouse, subtotal, tax_amount, shipping_charges, grand_total, status, approval_status, approved_by, approved_date, remarks, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                list(po)
+            )
+
+        # 15. PO LINE ITEMS
+        po_items = [
+            ("POI-001-1", "PO-001", "SP-002", "Black Pepper 550 G/L", "Export quality whole black pepper", 180.0, 120.0, "MT", 3800.0, 0.0, 684000.0, "Export Quality", "2026-09-18"),
+            ("POI-002-1", "PO-002", "FD-201", "Rice DDGS 45% Protein", "Feed grade DDGS bulk", 600.0, 0.0, "MT", 285.0, 0.0, 171000.0, "Feed Grade", "2026-09-22"),
+            ("POI-002-2", "PO-002", "AG-101", "Perfumed Rice DT 8", "5% Broken Sortex white rice", 50.0, 0.0, "MT", 420.0, 0.0, 21000.0, "5% Broken", "2026-09-22"),
+            ("POI-003-1", "PO-003", "SP-003", "Green Cardamom 8mm+", "Bold green cardamom premium", 5.0, 0.0, "MT", 22500.0, 0.0, 112500.0, "Bold Green", "2026-10-28"),
+            ("POI-004-1", "PO-004", "FD-202", "Soybean Meal De-hulled", "48% protein non-GMO soybean meal", 1000.0, 0.0, "MT", 460.0, 0.0, 460000.0, "48% Protein", "2026-11-01"),
+        ]
+        for pi in po_items:
+            db_manager.execute_write(
+                "INSERT INTO purchase_order_items (id, po_id, item_code, item_name, description, quantity, received_qty, uom, rate, discount_percent, amount, quality_grade, required_by_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                list(pi)
+            )
+
+        # 16. GOODS RECEIPT NOTES
+        grns = [
+            ("GRN-001", "GRN-2026-00201", "PO-001", "PO-2026-00101", "SP-201", "Cochin Spices & Plantations Ltd", "2026-09-18", "Kochi Terminal", "TransIndia Logistics", "KL-21-AB-9041", "Partial shipment - 120 MT received", "SUBMITTED", "USR-003"),
+        ]
+        for g in grns:
+            db_manager.execute_write(
+                "INSERT INTO goods_receipt_notes (id, grn_number, po_id, po_number, supplier_id, supplier_name, receipt_date, receiving_warehouse, transporter, vehicle_no, remarks, status, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                list(g)
+            )
+
+        # 17. GRN ITEMS
+        grn_items = [
+            ("GRNI-001-1", "GRN-001", "POI-001-1", "SP-002", "Black Pepper 550 G/L", 180.0, 120.0, 118.5, 1.5, "MT", "LOT-BP-SEP-01", "ACCEPTED", "1.5 MT rejected due to moisture > 12%"),
+        ]
+        for gi in grn_items:
+            db_manager.execute_write(
+                "INSERT INTO grn_items (id, grn_id, po_item_id, item_code, item_name, ordered_qty, received_qty, accepted_qty, rejected_qty, uom, batch_no, quality_status, remarks) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                list(gi)
+            )
+
+        # ═══════════════════════════════════════════════════════════
+        # 18. SALES ORDERS
+        # ═══════════════════════════════════════════════════════════
+        sales_orders = [
+            ("SO-001", "SO-2026-00301", "BP-101", "Al-Barakah Spices Trading LLC", "CPO-ABK-2026-441", "2026-08-20", "2026-09-15", "USD", 1.0, "LC at Sight", "FOB", "Jebel Ali", "Vũ Thị Hoan", "Middle East", 345600.0, 0.0, 0.0, 345600.0, 345600.0, 0.0, "INVOICED", "Black Pepper 550GL export to Dubai", "USR-002"),
+            ("SO-002", "SO-2026-00302", "BP-102", "Saigon Agri-Food Export Corp", None, "2026-08-25", "2026-09-28", "USD", 1.0, "CAD / 30 Days", "CIF", "Cat Lai Port", "Vũ Thị Hoan", "Southeast Asia", 91200.0, 0.0, 3200.0, 94400.0, 0.0, 94400.0, "CONFIRMED", "Rice DDGS bulk export to Vietnam domestic", "USR-002"),
+            ("SO-003", "SO-2026-00303", "BP-103", "Hamburg Commodities GmbH", "DE-HC-PO-8811", "2026-08-10", "2026-09-22", "USD", 1.0, "TT 30% Adv / 70% BL", "CFR", "Hamburg Port", "Vũ Thị Hoan", "Europe", 281250.0, 0.0, 4500.0, 285750.0, 285750.0, 0.0, "PAID", "Green Cardamom premium export to Germany", "USR-002"),
+            ("SO-004", "SO-2026-00304", "BP-101", "Al-Barakah Spices Trading LLC", None, "2026-10-18", "2026-11-10", "USD", 1.0, "LC at Sight", "FOB", "Jebel Ali", "Vũ Thị Hoan", "Middle East", 178000.0, 0.0, 0.0, 178000.0, 0.0, 178000.0, "DRAFT", "Nutmeg & Mace Q4 order", "USR-002"),
+        ]
+        for so in sales_orders:
+            db_manager.execute_write(
+                "INSERT INTO sales_orders (id, so_number, customer_id, customer_name, customer_po_number, order_date, delivery_date, currency, exchange_rate, payment_terms, incoterms, incoterms_location, salesperson, territory, subtotal, tax_amount, shipping_charges, grand_total, paid_amount, outstanding_amount, status, remarks, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                list(so)
+            )
+
+        # 19. SO LINE ITEMS
+        so_items = [
+            ("SOI-001-1", "SO-001", "SP-002", "Black Pepper 550 G/L", "Export quality black pepper 550GL", 54.0, 54.0, 54.0, "MT", 6400.0, 0.0, 345600.0, "Hai Phong Hub"),
+            ("SOI-002-1", "SO-002", "FD-201", "Rice DDGS 45% Protein", "Feed grade DDGS for Vietnam poultry sector", 320.0, 0.0, 0.0, "MT", 285.0, 0.0, 91200.0, "Hanoi HQ"),
+            ("SOI-003-1", "SO-003", "SP-003", "Green Cardamom 8mm+", "Bold green premium cardamom", 12.5, 12.5, 12.5, "MT", 22500.0, 0.0, 281250.0, "Kochi Terminal"),
+            ("SOI-004-1", "SO-004", "SP-004", "Nutmeg & Javitri (Mace)", "Sound clean nutmeg with mace", 20.0, 0.0, 0.0, "MT", 8900.0, 0.0, 178000.0, "Kochi Terminal"),
+        ]
+        for si in so_items:
+            db_manager.execute_write(
+                "INSERT INTO sales_order_items (id, so_id, item_code, item_name, description, quantity, delivered_qty, billed_qty, uom, rate, discount_percent, amount, warehouse) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                list(si)
+            )
+
+        # 20. CHART OF ACCOUNTS
+        accounts = [
+            ("ACC-100", "1000", "Assets", "Asset", None, True, "USD", 0.0, False, "All asset accounts"),
+            ("ACC-110", "1100", "Bank Accounts", "Asset", "1000", True, "USD", 485000.0, False, "Bank and cash accounts"),
+            ("ACC-111", "1101", "HDFC Bank - Export Account", "Asset", "1100", False, "USD", 325000.0, False, "Primary export revenue account"),
+            ("ACC-112", "1102", "Vietcombank - Operations", "Asset", "1100", False, "VND", 160000.0, False, "Vietnam operations account"),
+            ("ACC-120", "1200", "Accounts Receivable", "Asset", "1000", False, "USD", 94400.0, False, "Outstanding customer payments"),
+            ("ACC-130", "1300", "Inventory", "Asset", "1000", False, "USD", 1250000.0, False, "Stock-in-hand valuation"),
+            ("ACC-200", "2000", "Liabilities", "Liability", None, True, "USD", 0.0, False, "All liability accounts"),
+            ("ACC-210", "2100", "Accounts Payable", "Liability", "2000", False, "USD", 574200.0, False, "Outstanding supplier payments"),
+            ("ACC-220", "2200", "Tax Liabilities", "Liability", "2000", False, "USD", 18500.0, False, "GST/VAT/TDS payable"),
+            ("ACC-300", "3000", "Equity", "Equity", None, True, "USD", 0.0, False, "Shareholder equity"),
+            ("ACC-310", "3100", "Share Capital", "Equity", "3000", False, "USD", 500000.0, False, "Paid-up capital"),
+            ("ACC-320", "3200", "Retained Earnings", "Equity", "3000", False, "USD", 185000.0, False, "Accumulated profits"),
+            ("ACC-400", "4000", "Income", "Income", None, True, "USD", 0.0, False, "All income accounts"),
+            ("ACC-410", "4100", "Sales Revenue - Export", "Income", "4000", False, "USD", 725750.0, False, "Export sales revenue"),
+            ("ACC-420", "4200", "Duty Drawback Income", "Income", "4000", False, "USD", 12400.0, False, "Export duty drawback claims"),
+            ("ACC-430", "4300", "Forex Gain", "Income", "4000", False, "USD", 4200.0, False, "Foreign exchange gains"),
+            ("ACC-500", "5000", "Expenses", "Expense", None, True, "USD", 0.0, False, "All expense accounts"),
+            ("ACC-510", "5100", "Cost of Goods Sold", "Expense", "5000", False, "USD", 420000.0, False, "Direct material costs"),
+            ("ACC-520", "5200", "Freight & Shipping", "Expense", "5000", False, "USD", 48200.0, False, "Container freight and logistics"),
+            ("ACC-530", "5300", "Commission & Brokerage", "Expense", "5000", False, "USD", 15800.0, False, "Broker and agent commissions"),
+            ("ACC-540", "5400", "Salaries & Wages", "Expense", "5000", False, "USD", 52500.0, False, "Employee compensation"),
+            ("ACC-550", "5500", "Bank Charges", "Expense", "5000", False, "USD", 8900.0, False, "LC charges, wire fees, bank costs"),
+        ]
+        for acc in accounts:
+            db_manager.execute_write(
+                "INSERT INTO chart_of_accounts (id, account_code, account_name, account_type, parent_account, is_group, currency, balance, is_frozen, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                list(acc)
+            )
+
+        # 21. JOURNAL ENTRIES (sample GL transactions)
+        journal_entries = [
+            ("JE-001", "JE-2026-00001", "2026-08-25", "ACC-120", "Accounts Receivable", 345600.0, 0.0, "Customer", "Al-Barakah Spices Trading LLC", "Sales Invoice", "INV-001", "Invoice for Black Pepper export SO-001", "USR-005"),
+            ("JE-002", "JE-2026-00002", "2026-08-25", "ACC-410", "Sales Revenue - Export", 0.0, 345600.0, "Customer", "Al-Barakah Spices Trading LLC", "Sales Invoice", "INV-001", "Revenue recognition BP 550GL", "USR-005"),
+            ("JE-003", "JE-2026-00003", "2026-09-22", "ACC-120", "Accounts Receivable", 285750.0, 0.0, "Customer", "Hamburg Commodities GmbH", "Sales Invoice", "INV-002", "Invoice for Cardamom export SO-003", "USR-005"),
+            ("JE-004", "JE-2026-00004", "2026-09-22", "ACC-410", "Sales Revenue - Export", 0.0, 285750.0, "Customer", "Hamburg Commodities GmbH", "Sales Invoice", "INV-002", "Revenue recognition Cardamom", "USR-005"),
+            ("JE-005", "JE-2026-00005", "2026-09-25", "ACC-111", "HDFC Bank - Export Account", 285750.0, 0.0, "Customer", "Hamburg Commodities GmbH", "Payment", "PAY-001", "TT payment received - Cardamom shipment", "USR-005"),
+            ("JE-006", "JE-2026-00006", "2026-09-25", "ACC-120", "Accounts Receivable", 0.0, 285750.0, "Customer", "Hamburg Commodities GmbH", "Payment", "PAY-001", "AR cleared - Hamburg payment", "USR-005"),
+            ("JE-007", "JE-2026-00007", "2026-09-01", "ACC-510", "Cost of Goods Sold", 420000.0, 0.0, None, None, "Purchase Order", "PO-001", "COGS - Black Pepper procurement", "USR-005"),
+            ("JE-008", "JE-2026-00008", "2026-09-01", "ACC-210", "Accounts Payable", 0.0, 420000.0, "Supplier", "Cochin Spices & Plantations Ltd", "Purchase Order", "PO-001", "AP - Cochin Spices PO", "USR-005"),
+        ]
+        for je in journal_entries:
+            db_manager.execute_write(
+                "INSERT INTO journal_entries (id, entry_number, entry_date, account_id, account_name, debit, credit, party_type, party_name, reference_type, reference_id, narration, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                list(je)
+            )
+
+        # 22. SALES INVOICES
+        invoices = [
+            ("INV-001", "INV-2026-00401", "BP-101", "Al-Barakah Spices Trading LLC", "SO-001", "SO-2026-00301", "2026-08-25", "2026-09-25", "USD", 1.0, 345600.0, 0.0, 345600.0, 345600.0, 0.0, "PAID", "LC at Sight", "Export invoice - Black Pepper", "USR-005"),
+            ("INV-002", "INV-2026-00402", "BP-103", "Hamburg Commodities GmbH", "SO-003", "SO-2026-00303", "2026-09-22", "2026-10-22", "USD", 1.0, 281250.0, 4500.0, 285750.0, 285750.0, 0.0, "PAID", "TT 30% Adv / 70% BL", "Export invoice - Green Cardamom", "USR-005"),
+            ("INV-003", "INV-2026-00403", "BP-102", "Saigon Agri-Food Export Corp", "SO-002", "SO-2026-00302", "2026-10-01", "2026-10-31", "USD", 1.0, 91200.0, 3200.0, 94400.0, 0.0, 94400.0, "SUBMITTED", "CAD / 30 Days", "Export invoice - DDGS", "USR-005"),
+        ]
+        for inv in invoices:
+            db_manager.execute_write(
+                "INSERT INTO sales_invoices (id, invoice_number, customer_id, customer_name, sales_order_id, so_number, invoice_date, due_date, currency, exchange_rate, subtotal, tax_amount, grand_total, paid_amount, outstanding_amount, status, payment_terms, remarks, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                list(inv)
+            )
+
+        # 23. INVOICE ITEMS
+        inv_items = [
+            ("INVI-001-1", "INV-001", "SP-002", "Black Pepper 550 G/L", "Export quality 550GL", 54.0, 6400.0, 0.0, 0.0, 345600.0),
+            ("INVI-002-1", "INV-002", "SP-003", "Green Cardamom 8mm+", "Bold green premium", 12.5, 22500.0, 0.0, 0.0, 281250.0),
+            ("INVI-003-1", "INV-003", "FD-201", "Rice DDGS 45% Protein", "Feed grade bulk", 320.0, 285.0, 0.0, 0.0, 91200.0),
+        ]
+        for ii in inv_items:
+            db_manager.execute_write(
+                "INSERT INTO invoice_items (id, invoice_id, item_code, item_name, description, quantity, rate, tax_rate, tax_amount, amount) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                list(ii)
+            )
+
+        # 24. PAYMENT ENTRIES
+        payments = [
+            ("PAY-001", "PAY-2026-00501", "RECEIVE", "Customer", "Hamburg Commodities GmbH", "BP-103", "2026-09-25", "TT Wire", "USD", 285750.0, "UTR-DEHAM-88401", "2026-09-25", "HDFC Bank Export", "INV-002", "INV-2026-00402", "TT payment for Cardamom shipment", "SUBMITTED", "USR-005"),
+            ("PAY-002", "PAY-2026-00502", "RECEIVE", "Customer", "Al-Barakah Spices Trading LLC", "BP-101", "2026-09-20", "LC Negotiation", "USD", 345600.0, "LC-ABK-2026-441-NEG", "2026-09-20", "HDFC Bank Export", "INV-001", "INV-2026-00401", "LC negotiated - Black Pepper", "SUBMITTED", "USR-005"),
+        ]
+        for pay in payments:
+            db_manager.execute_write(
+                "INSERT INTO payment_entries (id, payment_number, payment_type, party_type, party_name, party_id, payment_date, mode_of_payment, currency, paid_amount, reference_no, reference_date, bank_account, allocated_to_invoice, allocated_invoice_number, remarks, status, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                list(pay)
+            )
+
         logger.info("SOILEX Life Science database seeding completed successfully!")
 
         # ─── New HR / Recruitment Seed Data ──────────────────────────────────

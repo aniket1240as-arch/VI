@@ -11,37 +11,42 @@
 
 ## Overview
 
-SOILEX Life Science ERP is a fully integrated enterprise system covering **12 operational modules** — from product catalog management and trade logistics to HR, payroll, and business intelligence. Built with a **React + Tailwind CSS** frontend and a **FastAPI + DuckDB** backend, designed for easy migration to PostgreSQL when moving to production.
+SOILEX Life Science ERP is a comprehensive, multi-facility international export enterprise resource planning system covering **16 operational modules** — from sourcing, procurement, and commercial trade logistics to general ledger accounting, talent recruitment, workforce appraisals, and executive intelligence. Built with a high-performance **React + Tailwind CSS** frontend and a modular **FastAPI + DuckDB** backend powered by the Repository Pattern for on-prem or PostgreSQL migration.
 
-### Brand
+### Brand Identity
 - **Company**: SOILEX Life Science (BR-HN)
 - **Tagline**: The Essence of Authentic Spices
 - **Colors**: White, Royal Blue (`#1E40AF`), Dark Yellow (`#D97706`)
 - **Website**: [soilexlifescience.com](https://soilexlifescience.com)
+- **Repository**: [github.com/aniket1240as-arch/VI](https://github.com/aniket1240as-arch/VI)
 
 ---
 
-## Features (12 Modules)
+## Enterprise Feature Modules
 
-| Module | Description |
-|--------|-------------|
-| 📊 **Executive Dashboard** | Live KPIs — sales orders, contract value, container logistics |
-| 🌶️ **Product Catalog** | Spices, Grains, Animal Feed SKU management (CRUD) |
-| 🚢 **Trade Operations** | Export/Import contracts, shipment manifests, container tracking |
-| 🤝 **Partners Directory** | Global buyers, certified suppliers, trade brokers |
-| 👤 **Employee Directory** | Workforce management with department & branch filters |
-| 📋 **HR Dashboard** | Staff roster, attendance gauge, pending leave approvals |
-| ⏰ **Attendance** | Biometric clock-in simulator, leave requests |
-| 💰 **Payroll** | Monthly salary processing with tax deductions |
-| 📅 **Real-Time Calendar** | Operational scheduling with live ticking clock |
-| ✅ **Task Planner** | TODO board with priority queues (persists to DB) |
-| 📈 **Reports & Analytics** | Export revenue analytics, audit trail logs |
-| 🏭 **Admin & Bio-Hubs** | Facility management, system diagnostics |
+| Module | Features & Capabilities |
+|--------|-------------------------|
+| 📊 **Executive Overview** | C-suite KPI widgets, gross trade volume, active shipments, container tracking |
+| 🌶️ **Commodity Catalog** | Whole Spices, Agro Grains, Animal Feed SKU catalog with grades & origins |
+| 🛒 **Procurement & PO** | Purchase Orders lifecycle (`DRAFT → APPROVED → SENT → RECEIVED`), Goods Receipt Notes (GRN), quality inspection, tolerance matching |
+| 💵 **Finance & Accounting** | Commercial Sales Orders, General Ledger with Chart of Accounts, Sales Invoices, AR Aging, Payment entries & UTR settlement |
+| 🚢 **Global Trade & Logistics** | Export/Import trade contracts, Bills of Lading, reefer/dry container manifests |
+| 🤝 **Partners Network** | Verified international buyers, certified farming suppliers, trade brokers |
+| 👥 **Employee Directory** | Complete personnel directory with biometric codes, emergency contacts & food safety certs |
+| 📋 **HR & Workforce Dashboard** | Live workforce attendance gauge, pending approvals, shift rosters |
+| ⏰ **Attendance & Leaves** | Biometric clock-in simulator, overtime calculation, attendance regularization |
+| 💰 **Payroll Management** | Automated salary calculation, tax withholding, statutory deductions, pay slips |
+| 🎯 **Recruitment & Hiring** | Job postings, candidate ATS pipeline, multi-stage interview scheduling |
+| 📈 **Performance & Appraisals** | Quarterly OKRs, employee goals, 9-box performance-potential matrix, 360 reviews |
+| 📱 **Employee Portal (ESS)** | Self-service punch log, weekly timesheet tracker, leave applications |
+| 📅 **Scientific Calendar** | Real-time operational scheduling with live ticking clock |
+| ✅ **Task Planner** | Categorized TODO board with priority matrix |
+| 📑 **BI & Export Reports** | Foreign trade revenue analytics, audit trail logs, compliance reports |
 
-### Authentication
-- JWT-based login with PBKDF2-SHA256 password hashing
-- Role-based access: Admin, Trade Officer, QA Manager, HR Manager
-- Logout button in Navbar with user role badge
+### Identity & Access Management (IAM)
+- JWT token persistence with PBKDF2-SHA256 password hashing
+- Role-based access control: `ADMIN`, `TRADE_OFFICER`, `QUALITY_MANAGER`, `HR_MANAGER`, `EMPLOYEE`
+- Automatic role routing & least-privilege self-service access restrictions
 
 ---
 
@@ -51,56 +56,9 @@ SOILEX Life Science ERP is a fully integrated enterprise system covering **12 op
 |-------|-----------|
 | **Frontend** | React 19, Vite 5, Tailwind CSS, Lucide Icons |
 | **Backend** | FastAPI, Pydantic v2, Uvicorn |
-| **Database** | DuckDB (embedded, single-file — migrateable to PostgreSQL) |
+| **Database** | DuckDB (embedded, ACID compliant, thread-safe — zero external DB setup required) |
 | **Auth** | JWT (python-jose), PBKDF2-HMAC-SHA256 |
-| **Architecture** | Repository Pattern (abstract interface → swappable DB engine) |
-
----
-
-## Project Structure
-
-```
-IV/
-├── src/                          # React frontend
-│   ├── App.jsx                   # AuthProvider + login gate
-│   ├── context/AuthContext.jsx   # JWT auth context
-│   ├── services/api.js           # API client (all 12 modules)
-│   └── components/
-│       ├── auth/LoginPage.jsx
-│       ├── dashboard/MainDashboard.jsx
-│       ├── products/ProductCatalog.jsx
-│       ├── trade/TradeView.jsx
-│       ├── partners/PartnersView.jsx
-│       ├── employees/EmployeeList.jsx
-│       ├── hr/HrDashboard.jsx
-│       ├── attendance/AttendanceView.jsx
-│       ├── payroll/PayrollView.jsx
-│       ├── calendar/RealtimeCalendar.jsx
-│       ├── workspace/TodoPlanner.jsx
-│       ├── analytics/ReportsView.jsx
-│       ├── admin/MastersAdminView.jsx
-│       └── layout/ (AppShell, Navbar, Sidebar)
-│
-├── backend/                      # FastAPI backend
-│   ├── run.py                    # Uvicorn launcher
-│   ├── requirements.txt
-│   ├── app/
-│   │   ├── main.py               # FastAPI app + CORS + lifespan
-│   │   ├── core/                  # Config, Security, Database
-│   │   ├── db/                    # Schema migration + seed data
-│   │   ├── models/                # Pydantic v2 schemas (9 files)
-│   │   ├── repositories/          # Abstract + DuckDB implementation
-│   │   └── api/v1/endpoints/      # 12 API routers (28 endpoints)
-│   └── data/
-│       └── soilex.duckdb          # Auto-created on startup
-│
-├── reference_mockups/             # Original design screenshots
-├── BACKEND_API_SPECIFICATION.md   # REST API documentation
-├── DESIGN.md                      # UI/UX design notes
-├── backend_architecture.md        # Architecture explainer
-├── integration_roadmap.md         # Module integration plan
-└── walkthrough.md                 # Implementation walkthrough
-```
+| **Architecture** | Repository Pattern with abstract `BaseRepository` interface |
 
 ---
 
@@ -112,7 +70,7 @@ IV/
 
 ### 1. Install Frontend Dependencies
 ```bash
-cd IV
+cd VI
 npm install
 ```
 
@@ -134,72 +92,55 @@ pip install -r requirements.txt
 cd backend
 python run.py
 # → http://127.0.0.1:8000
-# → Swagger docs: http://127.0.0.1:8000/docs
+# → Swagger API Docs: http://127.0.0.1:8000/docs
 
 # Terminal 2: Frontend
-cd IV
+cd VI
 npm run dev
 # → http://localhost:3000
 ```
 
-### 4. Login
+### 4. Demo Login Credentials
 | Email | Password | Role |
 |-------|----------|------|
-| `admin@soilexlifescience.com` | `admin123` | Admin |
+| `admin@soilexlifescience.com` | `admin123` | Executive Admin |
 | `hoan.vu@soilexlifescience.com` | `trade123` | Trade Officer |
-| `rajesh.s@soilexlifescience.com` | `qa123` | QA Manager |
+| `rajesh.s@soilexlifescience.com` | `qa123` | QA Lab Director |
 | `priya.n@soilexlifescience.com` | `hr123` | HR Manager |
 
 ---
 
-## API Endpoints (28 paths)
+## API Architecture
 
-All endpoints are prefixed with `/api/v1`. Interactive docs at `/docs`.
+All endpoints are organized under `/api/v1` with automated OpenAPI schemas at `/docs`.
 
-| Router | Prefix | Methods |
-|--------|--------|---------|
-| Auth | `/auth` | POST `/login`, GET `/me` |
-| Dashboard | `/dashboard` | GET `/executive-summary` |
-| Products | `/products` | GET, POST, PUT `/{id}`, DELETE `/{id}` |
-| Trade | `/trade` | Contracts, Shipments, Containers |
-| Partners | `/partners` | GET, POST, DELETE `/{id}` |
-| Employees | `/employees` | GET, POST, DELETE `/{id}` |
-| Attendance | `/attendance` | GET `/logs`, POST `/clock-in`, GET/POST `/leaves` |
-| Payroll | `/payroll` | GET `/records`, POST `/generate` |
-| Calendar | `/calendar` | GET/POST/DELETE `/events` |
-| Tasks | `/tasks` | GET, POST, PATCH `/{id}/toggle`, DELETE `/{id}` |
-| Reports | `/reports` | GET `/export-revenue`, GET `/audit-logs` |
-| Admin | `/admin` | GET `/facilities`, GET `/system-info` |
-| Health | `/health` | GET |
-
----
-
-## Database Migration
-
-The backend uses a **Repository Pattern** abstraction. To switch from DuckDB to PostgreSQL:
-
-1. Create `app/repositories/postgres_repo.py` implementing `BaseRepository`
-2. Update `.env`:
-   ```
-   DATABASE_TYPE=postgres
-   DATABASE_URL=postgresql://user:pass@host:5432/soilex
-   ```
-3. No router or frontend code changes needed.
+| Domain Router | Base Prefix | Key Operations |
+|---------------|-------------|----------------|
+| **Auth** | `/auth` | `/login`, `/me` |
+| **Dashboard** | `/dashboard` | `/executive-summary` |
+| **Procurement** | `/procurement` | `/purchase-orders`, `/grns`, `/summary` |
+| **Finance** | `/finance` | `/sales-orders`, `/chart-of-accounts`, `/journal-entries`, `/invoices`, `/payments`, `/summary` |
+| **Products** | `/products` | Products CRUD, categories, stock tracking |
+| **Trade** | `/trade` | Contracts, shipments, container temperature & status |
+| **Partners** | `/partners` | Buyers, suppliers, brokers directory |
+| **Employees** | `/employees` | Employee profiles, exits & clearances |
+| **Attendance** | `/attendance` | Clock-in, leaves, regularizations, timesheets |
+| **Payroll** | `/payroll` | Records, generation, pay slips |
+| **Recruitment** | `/recruitment` | Job openings, candidates, interview schedules |
+| **Performance** | `/performance` | Goals, OKRs, appraisal cycles, reviews |
+| **Calendar** | `/calendar` | Operations events & schedules |
+| **Tasks** | `/tasks` | Workspace tasks & priorities |
+| **Reports** | `/reports` | Export revenue analytics, audit trail |
+| **Admin** | `/admin` | Facilities, system diagnostic info |
+| **Health** | `/health` | Live backend healthcheck |
 
 ---
 
-## Documentation
+## Database Engine & Migration
 
-| Document | Description |
-|----------|-------------|
-| [BACKEND_API_SPECIFICATION.md](BACKEND_API_SPECIFICATION.md) | Full REST API spec for all 20 modules |
-| [backend_architecture.md](backend_architecture.md) | Architecture diagrams & design decisions |
-| [integration_roadmap.md](integration_roadmap.md) | Module integration plan & status |
-| [walkthrough.md](walkthrough.md) | Implementation walkthrough & test results |
-| [DESIGN.md](DESIGN.md) | UI/UX design & customization guide |
+DuckDB is utilized for zero-configuration embedded local storage. Queries are serialized via `DuckDBManager` with thread-safe connection pooling.
 
----
-
-## License
-
-Private — SOILEX Life Science © 2026
+To migrate to PostgreSQL on bare-metal or cloud:
+1. Update `DATABASE_TYPE=postgres` in `.env`.
+2. Provide standard `DATABASE_URL=postgresql://user:password@host:5432/soilex_erp`.
+3. The repository factory pattern in `app/repositories/__init__.py` will swap connection drivers without altering API contracts or endpoint code.

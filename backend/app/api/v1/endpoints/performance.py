@@ -7,7 +7,7 @@ from ....models.common import ApiResponse
 router = APIRouter(prefix="/performance", tags=["Performance & Appraisals"])
 
 @router.get("/goals")
-def get_performance_goals(employee_id: Optional[str] = Query(None), quarter: Optional[str] = Query(None)):
+def get_performance_goals(employee_id: Optional[str] = None, quarter: Optional[str] = None):
     query = """
         SELECT pg.* FROM performance_goals pg
         LEFT JOIN employees e ON pg.employee_id = e.id OR pg.employee_id = e.employee_code
@@ -64,7 +64,7 @@ def update_performance_goal(id: str, data: dict):
     return ApiResponse(message="Goal progress updated", data=updated)
 
 @router.get("/reviews")
-def get_performance_reviews(employee_id: Optional[str] = Query(None), cycle: Optional[str] = Query(None)):
+def get_performance_reviews(employee_id: Optional[str] = None, cycle: Optional[str] = None):
     # 1. Ensure all active employees have a review record in performance_reviews
     try:
         all_emps = db_manager.execute_query(

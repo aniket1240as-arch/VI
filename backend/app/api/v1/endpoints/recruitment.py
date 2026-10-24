@@ -10,7 +10,7 @@ candidate_repo = get_repository("candidates")
 interview_repo = get_repository("interviews")
 
 @router.get("/requisitions")
-def get_jds(status: Optional[str] = Query(None)):
+def get_jds(status: Optional[str] = None):
     jds = jd_repo.get_all(limit=100)
     if status:
         jds = [j for j in jds if j.get('status') == status]
@@ -36,7 +36,7 @@ def update_jd(id: str, data: dict):
     return ApiResponse(message="Requisition updated", data=updated)
 
 @router.get("/candidates")
-def get_candidates(jd_id: Optional[str] = Query(None), stage: Optional[str] = Query(None)):
+def get_candidates(jd_id: Optional[str] = None, stage: Optional[str] = None):
     candidates = candidate_repo.get_all(limit=200)
     if jd_id:
         candidates = [c for c in candidates if c.get('jd_id') == jd_id]
@@ -70,7 +70,7 @@ def delete_candidate(id: str):
     return ApiResponse(message="Candidate removed", data={"id": id})
 
 @router.get("/interviews")
-def get_interviews(candidate_id: Optional[str] = Query(None)):
+def get_interviews(candidate_id: Optional[str] = None):
     interviews = interview_repo.get_all(limit=100)
     if candidate_id:
         interviews = [i for i in interviews if i.get('candidate_id') == candidate_id]

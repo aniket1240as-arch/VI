@@ -459,6 +459,119 @@ class ApiService {
   async approveAllTimesheets(approver = 'Director Approval', weekStart = null) {
     return this._request('POST', '/attendance/timesheets/approve-all', { approver, week_start: weekStart });
   }
+
+  // ──────────────────── Procurement ────────────────────
+  async getPurchaseOrders(status = null, supplierId = null) {
+    const params = [];
+    if (status && status !== 'ALL') params.push(`status=${encodeURIComponent(status)}`);
+    if (supplierId) params.push(`supplier_id=${encodeURIComponent(supplierId)}`);
+    const qs = params.length ? '?' + params.join('&') : '';
+    return this._request('GET', `/procurement/purchase-orders${qs}`);
+  }
+
+  async getPurchaseOrder(id) {
+    return this._request('GET', `/procurement/purchase-orders/${id}`);
+  }
+
+  async createPurchaseOrder(po) {
+    return this._request('POST', '/procurement/purchase-orders', po);
+  }
+
+  async updatePOStatus(id, update) {
+    return this._request('PATCH', `/procurement/purchase-orders/${id}/status`, update);
+  }
+
+  async deletePurchaseOrder(id) {
+    return this._request('DELETE', `/procurement/purchase-orders/${id}`);
+  }
+
+  async getGRNs(poId = null) {
+    const qs = poId ? `?po_id=${encodeURIComponent(poId)}` : '';
+    return this._request('GET', `/procurement/grns${qs}`);
+  }
+
+  async createGRN(grn) {
+    return this._request('POST', '/procurement/grns', grn);
+  }
+
+  async getProcurementSummary() {
+    return this._request('GET', '/procurement/summary');
+  }
+
+  // ──────────────────── Finance ────────────────────
+  async getSalesOrders(status = null, customerId = null) {
+    const params = [];
+    if (status && status !== 'ALL') params.push(`status=${encodeURIComponent(status)}`);
+    if (customerId) params.push(`customer_id=${encodeURIComponent(customerId)}`);
+    const qs = params.length ? '?' + params.join('&') : '';
+    return this._request('GET', `/finance/sales-orders${qs}`);
+  }
+
+  async getSalesOrder(id) {
+    return this._request('GET', `/finance/sales-orders/${id}`);
+  }
+
+  async createSalesOrder(so) {
+    return this._request('POST', '/finance/sales-orders', so);
+  }
+
+  async updateSOStatus(id, update) {
+    return this._request('PATCH', `/finance/sales-orders/${id}/status`, update);
+  }
+
+  async deleteSalesOrder(id) {
+    return this._request('DELETE', `/finance/sales-orders/${id}`);
+  }
+
+  async getChartOfAccounts(accountType = null) {
+    const qs = accountType && accountType !== 'ALL' ? `?account_type=${encodeURIComponent(accountType)}` : '';
+    return this._request('GET', `/finance/chart-of-accounts${qs}`);
+  }
+
+  async createAccount(account) {
+    return this._request('POST', '/finance/chart-of-accounts', account);
+  }
+
+  async getJournalEntries(accountId = null, partyName = null, referenceType = null) {
+    const params = [];
+    if (accountId) params.push(`account_id=${encodeURIComponent(accountId)}`);
+    if (partyName) params.push(`party_name=${encodeURIComponent(partyName)}`);
+    if (referenceType) params.push(`reference_type=${encodeURIComponent(referenceType)}`);
+    const qs = params.length ? '?' + params.join('&') : '';
+    return this._request('GET', `/finance/journal-entries${qs}`);
+  }
+
+  async createJournalEntry(entry) {
+    return this._request('POST', '/finance/journal-entries', entry);
+  }
+
+  async getInvoices(status = null, customerId = null) {
+    const params = [];
+    if (status && status !== 'ALL') params.push(`status=${encodeURIComponent(status)}`);
+    if (customerId) params.push(`customer_id=${encodeURIComponent(customerId)}`);
+    const qs = params.length ? '?' + params.join('&') : '';
+    return this._request('GET', `/finance/invoices${qs}`);
+  }
+
+  async createInvoice(invoice) {
+    return this._request('POST', '/finance/invoices', invoice);
+  }
+
+  async getPayments(paymentType = null, partyType = null) {
+    const params = [];
+    if (paymentType && paymentType !== 'ALL') params.push(`payment_type=${encodeURIComponent(paymentType)}`);
+    if (partyType) params.push(`party_type=${encodeURIComponent(partyType)}`);
+    const qs = params.length ? '?' + params.join('&') : '';
+    return this._request('GET', `/finance/payments${qs}`);
+  }
+
+  async createPayment(payment) {
+    return this._request('POST', '/finance/payments', payment);
+  }
+
+  async getFinanceSummary() {
+    return this._request('GET', '/finance/summary');
+  }
 }
 
 // Singleton instance

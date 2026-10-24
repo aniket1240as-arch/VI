@@ -13,7 +13,9 @@ from .endpoints import (
     reports,
     admin,
     recruitment,
-    performance
+    performance,
+    procurement,
+    finance
 )
 
 api_router = APIRouter()
@@ -33,4 +35,5 @@ api_router.include_router(admin.router)
 api_router.include_router(recruitment.router)
 api_router.include_router(attendance.overtime_router)
 api_router.include_router(performance.router)
-
+api_router.include_router(procurement.router)
+api_router.include_router(finance.router)
