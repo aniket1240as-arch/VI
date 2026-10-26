@@ -93,6 +93,32 @@ export function AuthProvider({ children }) {
     return { success: false, message: 'Invalid email or password. Check credentials or start the backend server.' };
   };
 
+  const switchUser = async (email) => {
+    const result = await api.switchUser(email);
+    if (result && result.accessToken) {
+      const newToken = result.accessToken;
+      localStorage.setItem('soilex_token', newToken);
+      localStorage.setItem('soilex_user', JSON.stringify(result.user));
+      api.setToken(newToken);
+      setToken(newToken);
+      setUser(result.user);
+      return { success: true, user: result.user };
+    }
+
+    const demo = DEMO_USERS[email.toLowerCase()];
+    if (demo) {
+      const demoToken = 'DEMO_TOKEN_OFFLINE_' + Date.now();
+      localStorage.setItem('soilex_token', demoToken);
+      localStorage.setItem('soilex_user', JSON.stringify(demo.profile));
+      api.setToken(demoToken);
+      setToken(demoToken);
+      setUser(demo.profile);
+      return { success: true, user: demo.profile };
+    }
+
+    return { success: false, message: 'User not found' };
+  };
+
   const logout = () => {
     localStorage.removeItem('soilex_token');
     localStorage.removeItem('soilex_user');
@@ -102,7 +128,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, logout, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ user, token, loading, login, logout, switchUser, isAuthenticated: !!user }}>
       {children}
     </AuthContext.Provider>
   );

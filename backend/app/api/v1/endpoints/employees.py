@@ -157,6 +157,88 @@ def create_employee(emp_in: EmployeeCreate):
     except Exception:
         pass
 
+    # 5. Provision IAM User Account & IAM Role
+    try:
+        from ....core.security import get_password_hash
+        user_id = f"USR-{new_id}"
+        assigned_role = data.get("role") or "EMPLOYEE"
+        raw_password = data.get("password") or "emp123"
+        hashed = get_password_hash(raw_password)
+        
+        existing_u = db_manager.execute_one("SELECT id FROM users WHERE LOWER(email) = ?", [data["email"].lower()])
+        if existing_u:
+            db_manager.execute_write(
+                "UPDATE users SET employee_id = ?, role = ?, department = ?, name = ? WHERE id = ?",
+                [new_id, assigned_role, data.get("department"), data["full_name"], existing_u["id"]]
+            )
+        else:
+            db_manager.execute_write(
+                "INSERT INTO users (id, name, email, role, department, hashed_password, status, employee_id) VALUES (?, ?, ?, ?, ?, ?, 'ACTIVE', ?)",
+                [user_id, data["full_name"], data["email"], assigned_role, data.get("department"), hashed, new_id]
+            )
+    except Exception:
+        pass
+
+    # 6. Initialize Active Payroll Records
+    try:
+        months_to_seed = ["October 2026", "September 2026"]
+        for idx, m_str in enumerate(months_to_seed):
+            pay_id = f"PAY-{new_id}-{idx+1}"
+            db_manager.execute_write(
+                "INSERT INTO payroll_records (id, employee_id, employee_name, month_year, basic_pay, allowances, deductions, tax, net_salary, status) VALUES (?, ?, ?, ?, 2200.0, 1250.0, 240.0, 50.0, 3160.0, 'PAID')",
+                [pay_id, new_id, data["full_name"], m_str]
+            )
+    except Exception:
+        pass
+
+    # 7. Initialize Shopfloor / Department Shift Roster
+    try:
+        roster_id = f"ROST-{new_id}"
+        shift_name = data.get("shift") or "Morning Shift"
+        timings = "08:30 AM - 05:30 PM" if "Morning" in shift_name else "02:00 PM - 10:30 PM"
+        db_manager.execute_write(
+            "INSERT INTO shift_roster (id, employee_id, employee_name, department, branch, shift_code, shift_name, timings, effective_from, status) VALUES (?, ?, ?, ?, ?, 'SH-01', ?, ?, ?, 'ACTIVE')",
+            [roster_id, new_id, data["full_name"], data["department"], data["branch"], shift_name, timings, join_dt]
+        )
+    except Exception:
+        pass
+
+    # 8. Initialize Attendance Log for Today
+    try:
+        today_str = datetime.now().strftime("%Y-%m-%d")
+        att_id = f"ATT-{new_id}-TODAY"
+        db_manager.execute_write(
+            "INSERT INTO attendance_logs (id, employee_id, employee_name, date, clock_in, clock_out, work_hours, status, source, location) VALUES (?, ?, ?, ?, '08:30 AM', '05:30 PM', 8.5, 'PRESENT', 'BIOMETRIC_DEVICE', ?)",
+            [att_id, new_id, data["full_name"], today_str, data.get("branch", "Hanoi HQ")]
+        )
+    except Exception:
+        pass
+
+    # 9. Initialize Baseline Appraisal Review & Goal
+    try:
+        rev_id = f"REV-{new_id}"
+        db_manager.execute_write(
+            "INSERT INTO performance_reviews (id, employee_id, employee_name, cycle, self_rating, manager_rating, potential_rating, status, feedback, reviewer) VALUES (?, ?, ?, 'Annual Cycle 2025-26', 4.0, 4.2, 4.0, 'ONBOARDING_BASELINE', 'Newly onboarded candidate via talent pipeline. Initial probation baseline established.', 'Head of Department')",
+            [rev_id, new_id, data["full_name"]]
+        )
+        goal_id = f"PGL-{new_id}"
+        db_manager.execute_write(
+            "INSERT INTO performance_goals (id, employee_id, title, description, quarter, target_metric, progress_percent, status) VALUES (?, ?, 'Onboarding & Standard Operating Procedures (SOP)', 'Complete department orientation, ISO 22000 hygiene protocol, and ERP system workflows', 'Q3-2026', '100% SOP Compliance', 30, 'IN_PROGRESS')",
+            [goal_id, new_id]
+        )
+    except Exception:
+        pass
+
+    # 10. Initialize Employee Compliance (ISO 22000 & HACCP)
+    try:
+        comp_id = f"COMP-{new_id}"
+        db_manager.execute_write(
+            "INSERT INTO employee_compliance (id, employee_id, medical_fitness_status, medical_check_date, medical_expiry_date, haccp_certified, blood_group, gmp_violations_count) VALUES (?, ?, 'FIT_FOR_FOOD_PROCESSING', ?, '2027-10-26', true, 'O+', 0)",
+            [comp_id, new_id, join_dt]
+        )
+    except Exception:
+        pass
+
     return ApiResponse(message=f"Employee profile created with code {data['employee_code']}", data=EmployeeResponse(**created))
 
 @router.put("/{id}", response_model=ApiResponse[EmployeeResponse])

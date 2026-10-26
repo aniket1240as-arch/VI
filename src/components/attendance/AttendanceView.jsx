@@ -17,13 +17,14 @@ const FALLBACK_LEAVE = [
   { id: 'LEV-002', employee_id: 'EMP-001', employee_name: 'Vũ Thị Hoan', leave_type: 'Medical Leave', start_date: '2026-09-18', end_date: '2026-09-19', total_days: 2, reason: 'Dental surgery follow-up', status: 'PENDING', created_at: '2026-09-03' },
 ];
 
-const EMPLOYEES = [
+let DYNAMIC_EMPLOYEES = [
   { id: 'EMP-001', name: 'Vũ Thị Hoan' },
   { id: 'EMP-002', name: 'Rajesh Sharma' },
   { id: 'EMP-003', name: 'Nguyễn Văn Hùng' },
   { id: 'EMP-004', name: 'Priya Nair' },
   { id: 'EMP-005', name: 'Trần Quốc Bảo' },
 ];
+const EMPLOYEES = DYNAMIC_EMPLOYEES;
 
 const FALLBACK_HOLIDAYS = [
   { id: 'HOL-001', name: 'Vietnamese New Year (Tết)', date: '2026-01-28', branch: 'ALL', type: 'NATIONAL' },
@@ -228,6 +229,23 @@ const FALLBACK_TIMESHEETS = [
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function AttendanceView() {
+  const [activeEmployees, setActiveEmployees] = useState(DYNAMIC_EMPLOYEES);
+
+  useEffect(() => {
+    const fetchEmps = async () => {
+      try {
+        const emps = await api.getEmployees();
+        if (Array.isArray(emps) && emps.length > 0) {
+          const mapped = emps.map(e => ({ id: e.id, name: e.full_name, code: e.employee_code, department: e.department }));
+          DYNAMIC_EMPLOYEES = mapped;
+          setActiveEmployees(mapped);
+        }
+      } catch {}
+    };
+    fetchEmps();
+    window.addEventListener('soilex:employee_updated', fetchEmps);
+    return () => window.removeEventListener('soilex:employee_updated', fetchEmps);
+  }, []);
   const [activeTab, setActiveTab] = useState('WEEKLY_TIMESHEETS');
 
   // Corporate Weekly Timesheets
@@ -1572,7 +1590,7 @@ export default function AttendanceView() {
                 onChange={e => setLmSelectedEmp(e.target.value)}
                 className="bg-white border border-[#E2E8F0] rounded-md px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-none focus:border-[#1E40AF]"
               >
-                {EMPLOYEES.map(emp => (
+                {activeEmployees.map(emp => (
                   <option key={emp.id} value={emp.id}>{emp.name} ({emp.id})</option>
                 ))}
               </select>
@@ -1846,7 +1864,7 @@ export default function AttendanceView() {
                 onChange={e => setSelectedEmployee(e.target.value)}
                 className="w-full bg-white border border-[#E2E8F0] rounded-md px-3 py-2 text-xs focus:outline-none focus:border-[#1E40AF] font-medium"
               >
-                {EMPLOYEES.map(emp => (
+                {activeEmployees.map(emp => (
                   <option key={emp.id} value={emp.id}>{emp.name} ({emp.id})</option>
                 ))}
               </select>
@@ -1883,7 +1901,7 @@ export default function AttendanceView() {
                 <label className="text-xs font-bold text-slate-700 block mb-1">Employee <span className="text-red-500">*</span></label>
                 <select name="employee_id" value={leaveForm.employee_id} onChange={handleLeaveFormChange} required
                   className="w-full bg-white border border-[#E2E8F0] rounded-md px-3 py-2 text-xs focus:outline-none focus:border-[#1E40AF] font-medium">
-                  {EMPLOYEES.map(emp => (
+                  {activeEmployees.map(emp => (
                     <option key={emp.id} value={emp.id}>{emp.name} ({emp.id})</option>
                   ))}
                 </select>
@@ -2003,7 +2021,7 @@ export default function AttendanceView() {
                 <label className="text-xs font-bold text-slate-700 block mb-1">Employee <span className="text-red-500">*</span></label>
                 <select value={otForm.employee_id} onChange={e => setOtForm(f => ({ ...f, employee_id: e.target.value }))} required
                   className="w-full bg-white border border-[#E2E8F0] rounded-md px-3 py-2 text-xs focus:outline-none focus:border-[#1E40AF] font-medium">
-                  {EMPLOYEES.map(emp => (
+                  {activeEmployees.map(emp => (
                     <option key={emp.id} value={emp.id}>{emp.name} ({emp.id})</option>
                   ))}
                 </select>
@@ -2063,7 +2081,7 @@ export default function AttendanceView() {
                   required
                   className="w-full bg-white border border-[#E2E8F0] rounded-md px-3 py-2 text-xs focus:outline-none focus:border-[#1E40AF] font-medium"
                 >
-                  {EMPLOYEES.map(emp => (
+                  {activeEmployees.map(emp => (
                     <option key={emp.id} value={emp.id}>{emp.name} ({emp.id})</option>
                   ))}
                 </select>

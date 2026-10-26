@@ -97,6 +97,8 @@ export default function EmployeeList() {
     branch: 'Hanoi HQ',
     shift: 'Morning Shift',
     join_date: '',
+    role: 'EMPLOYEE',
+    password: 'emp123',
   });
 
   const notify = (type, msg) => {
@@ -173,10 +175,13 @@ export default function EmployeeList() {
         branch: newEmp.branch,
         shift: newEmp.shift,
         join_date: newEmp.join_date,
+        role: newEmp.role || 'EMPLOYEE',
+        password: newEmp.password || 'emp123',
       });
 
       if (result) {
-        notify('success', `${newEmp.full_name} (${result.employee_code || newEmp.employee_code}) added to directory.`);
+        notify('success', `${newEmp.full_name} (${result.employee_code || newEmp.employee_code}) provisioned across ERP & IAM Switcher.`);
+        window.dispatchEvent(new CustomEvent('soilex:employee_updated'));
         await refreshEmployees();
       } else {
         // Fallback: add locally
@@ -190,7 +195,7 @@ export default function EmployeeList() {
         notify('success', 'Employee added locally.');
       }
       setShowAddModal(false);
-      setNewEmp({ employee_code: '', full_name: '', email: '', phone: '', department: 'Sales & Export', designation: '', branch: 'Hanoi HQ', shift: 'Morning Shift', join_date: '' });
+      setNewEmp({ employee_code: '', full_name: '', email: '', phone: '', department: 'Sales & Export', designation: '', branch: 'Hanoi HQ', shift: 'Morning Shift', join_date: '', role: 'EMPLOYEE', password: 'emp123' });
     } catch {
       notify('error', 'Failed to add employee.');
     } finally {
@@ -864,6 +869,35 @@ export default function EmployeeList() {
                     onChange={(e) => setNewEmp({ ...newEmp, join_date: e.target.value })}
                     className="w-full bg-white border border-[#E2E8F0] rounded-md px-3 py-2 text-xs focus:outline-none focus:border-[#1E40AF] font-medium"
                   />
+                </div>
+
+                <div className="col-span-2 pt-2 border-t border-slate-100">
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-bold text-slate-700 block">IAM Login Role *</label>
+                    <span className="text-[10px] text-amber-700 font-bold bg-amber-50 px-2 py-0.5 rounded border border-amber-200">Reflects in User Switcher</span>
+                  </div>
+                  <select 
+                    value={newEmp.role || 'EMPLOYEE'}
+                    onChange={(e) => setNewEmp({ ...newEmp, role: e.target.value })}
+                    className="w-full bg-white border border-[#E2E8F0] rounded-md px-3 py-2 text-xs focus:outline-none focus:border-[#1E40AF] font-bold text-slate-800"
+                  >
+                    <option value="EMPLOYEE">EMPLOYEE (Standard User — Personal Self-Service Portal)</option>
+                    <option value="HR_MANAGER">HR_MANAGER (Human Resources & People Operations)</option>
+                    <option value="ADMIN">ADMIN (Executive Full ERP Access)</option>
+                    <option value="QUALITY_MANAGER">QUALITY_MANAGER (QA & Food Safety Lab)</option>
+                  </select>
+                </div>
+
+                <div className="col-span-2">
+                  <label className="text-xs font-bold text-slate-700 block mb-1">Initial Login Password</label>
+                  <input 
+                    type="text"
+                    placeholder="emp123"
+                    value={newEmp.password || 'emp123'}
+                    onChange={(e) => setNewEmp({ ...newEmp, password: e.target.value })}
+                    className="w-full bg-slate-50 border border-[#E2E8F0] rounded-md px-3 py-2 text-xs focus:outline-none focus:border-[#1E40AF] font-mono text-slate-700"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-1">Default credentials: emp123 (allows instant testing via IAM User Switcher)</p>
                 </div>
               </div>
 

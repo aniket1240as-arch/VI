@@ -14,6 +14,8 @@ class EmployeeBase(BaseModel):
     join_date: Optional[str] = None
     status: str = "ACTIVE"
     avatar_url: Optional[str] = None
+    role: Optional[str] = "EMPLOYEE"
+    password: Optional[str] = "emp123"
 
 class EmployeeCreate(EmployeeBase):
     pass
@@ -30,8 +32,8 @@ class EmployeeUpdate(BaseModel):
     join_date: Optional[str] = None
     status: Optional[str] = None
     avatar_url: Optional[str] = None
+    role: Optional[str] = None
 
 class EmployeeResponse(EmployeeBase):
     id: str
     created_at: Optional[Union[datetime, str]] = None
-

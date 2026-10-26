@@ -67,6 +67,14 @@ class ApiService {
     return this._request('GET', '/auth/me');
   }
 
+  async getAvailableUsers() {
+    return this._request('GET', '/auth/users');
+  }
+
+  async switchUser(email) {
+    return this._request('POST', '/auth/switch', { email });
+  }
+
   // ──────────────────── Dashboard ────────────────────
   async getDashboardSummary() {
     return this._request('GET', '/dashboard/executive-summary');

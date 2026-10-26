@@ -24,7 +24,10 @@ import {
   ChevronRight,
   Sparkles,
   Building2,
-  Briefcase
+  Briefcase,
+  CheckCircle2,
+  TrendingDown,
+  Clock
 } from 'lucide-react';
 import api from '../../services/api';
 import PieDonutChart from './PieDonutChart';
@@ -34,7 +37,6 @@ export default function MainDashboard({ onNavigate }) {
   const [chartData, setChartData] = useState(null);
   const [selectedModule, setSelectedModule] = useState('ALL'); // 'ALL' | 'SALES' | 'PURCHASE' | 'HR'
   const [isPitchMode, setIsPitchMode] = useState(false);
-  const [chartTypeToggle, setChartTypeToggle] = useState({}); // toggle between donut/pie per chart
 
   useEffect(() => {
     // 1. Fetch Executive Summary KPIs
@@ -248,80 +250,117 @@ export default function MainDashboard({ onNavigate }) {
   ];
 
   return (
-    <div className="p-4 sm:p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
       {/* ─────────────────────────────────────────────────────────────
-          1. TOP BANNER / CORPORATE IDENTITY & PRESENTATION BAR
+          1. CLASSIC & MODERN CORPORATE HERO BANNER
       ───────────────────────────────────────────────────────────── */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-5 rounded-xl border border-slate-200/90 shadow-sm print:hidden">
-        <div className="flex items-center space-x-3.5">
-          <img 
-            src="/favicon.png" 
-            alt="SOILEX" 
-            className="w-12 h-12 object-contain rounded-xl p-1 bg-blue-50 border border-blue-200"
-          />
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-                SOILEX Life Science
-              </h1>
-              <span className="text-[11px] px-2.5 py-0.5 rounded-full font-bold bg-amber-50 text-[#B45309] border border-amber-200">
-                The Essence of Authentic Spices
-              </span>
-              <span className="text-[11px] px-2 py-0.5 rounded-md font-semibold bg-blue-50 text-[#1E40AF] border border-blue-200 flex items-center gap-1">
-                <Sparkles className="w-3 h-3 text-amber-500" /> Executive Analytics Deck
+      <div className="relative overflow-hidden bg-white rounded-2xl border border-slate-200/90 shadow-[0_2px_12px_rgba(0,0,0,0.03)] print:border-none">
+        {/* Subtle Brand Top Accent Bar */}
+        <div className="h-1.5 bg-gradient-to-r from-[#1E40AF] via-[#D97706] to-[#059669]" />
+
+        <div className="p-5 sm:p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          {/* Identity & Mission */}
+          <div className="flex items-start sm:items-center space-x-4">
+            <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50/80 border border-blue-200/80 p-2 flex items-center justify-center shadow-xs shrink-0">
+              <img 
+                src="/favicon.png" 
+                alt="SOILEX" 
+                className="w-full h-full object-contain"
+              />
+              <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-[#D97706] border-2 border-white flex items-center justify-center text-[9px] text-white font-bold">
+                ★
               </span>
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Multi-Module Enterprise Intelligence • Visual Distribution Charts (Sales • Procurement • Human Resources)
-            </p>
+
+            <div className="space-y-1">
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight font-sans">
+                  SOILEX Life Science
+                </h1>
+                <span className="text-[11px] px-2.5 py-0.5 rounded-full font-bold bg-amber-50 text-[#B45309] border border-amber-200/80">
+                  The Essence of Authentic Spices
+                </span>
+                <span className="text-[11px] px-2.5 py-0.5 rounded-full font-semibold bg-blue-50 text-[#1E40AF] border border-blue-200 flex items-center gap-1">
+                  <ShieldCheck className="w-3.5 h-3.5 text-blue-600" /> ISO 22000 • HACCP • FSSAI
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 font-medium">
+                Integrated Agro-Commodity Export ERP • Boardroom Executive Visual Analytics & Presentation Suite
+              </p>
+            </div>
+          </div>
+
+          {/* Quick Metrics & Actions */}
+          <div className="flex items-center space-x-2.5 flex-wrap gap-y-2 shrink-0">
+            <button 
+              onClick={() => setIsPitchMode(!isPitchMode)}
+              className={`flex items-center space-x-1.5 px-4 py-2.5 rounded-xl text-xs font-bold shadow-xs transition-all border ${
+                isPitchMode 
+                  ? 'bg-gradient-to-r from-[#1E40AF] to-blue-800 text-white border-blue-800 ring-2 ring-blue-300' 
+                  : 'bg-white text-slate-700 border-slate-300/80 hover:bg-slate-50 hover:border-slate-400'
+              }`}
+              title="Toggle Executive Presentation Slide Mode"
+            >
+              <PieIcon className="w-4 h-4 text-amber-400" />
+              <span>{isPitchMode ? 'BOARDROOM SLIDES: ACTIVE' : 'EXECUTIVE PRESENTATION'}</span>
+            </button>
+
+            <button 
+              onClick={handlePrint}
+              className="flex items-center space-x-1.5 px-3.5 py-2.5 bg-white border border-slate-300/80 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-xl shadow-xs transition-colors"
+              title="Print or Export Slide Report to PDF"
+            >
+              <Printer className="w-4 h-4 text-slate-500" />
+              <span>EXPORT PDF</span>
+            </button>
+
+            <button 
+              onClick={() => onNavigate('export')}
+              className="flex items-center space-x-1.5 px-4 py-2.5 bg-[#1E40AF] hover:bg-blue-800 text-white text-xs font-bold rounded-xl shadow-sm hover:shadow transition-all"
+            >
+              <TrendingUp className="w-4 h-4" />
+              <span>OPERATIONS</span>
+            </button>
           </div>
         </div>
 
-        {/* Action Controls */}
-        <div className="flex items-center space-x-2 flex-wrap gap-y-2">
-          <button 
-            onClick={() => setIsPitchMode(!isPitchMode)}
-            className={`flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold shadow-sm transition-all border ${
-              isPitchMode 
-                ? 'bg-[#1E40AF] text-white border-[#1E40AF]' 
-                : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
-            }`}
-            title="Toggle Clean Boardroom Pitch Mode"
-          >
-            <PieIcon className="w-3.5 h-3.5" />
-            <span>{isPitchMode ? 'PRESENTATION MODE: ACTIVE' : 'BOARDROOM PITCH MODE'}</span>
-          </button>
-
-          <button 
-            onClick={handlePrint}
-            className="flex items-center space-x-1.5 px-3.5 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg shadow-sm transition-colors"
-            title="Print or Export Slide Report"
-          >
-            <Printer className="w-3.5 h-3.5" />
-            <span>PRINT / PDF</span>
-          </button>
-
-          <button 
-            onClick={() => onNavigate('export')}
-            className="flex items-center space-x-1.5 px-3.5 py-2 bg-[#1E40AF] hover:bg-blue-800 text-white text-xs font-semibold rounded-lg shadow-sm transition-colors"
-          >
-            <TrendingUp className="w-3.5 h-3.5" />
-            <span>TRADE OPERATIONS</span>
-          </button>
+        {/* Executive Ticker Bar */}
+        <div className="bg-slate-50/70 border-t border-slate-100 px-6 py-3 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-medium">
+          <div>
+            <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">YTD Export Volume</span>
+            <span className="font-extrabold text-slate-800 text-sm">20,892 MT</span>
+            <span className="text-[10px] text-emerald-600 font-bold ml-1.5">↑ 18.4% YoY</span>
+          </div>
+          <div>
+            <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Gross Export Revenue</span>
+            <span className="font-extrabold text-[#1E40AF] text-sm">$7.85M USD</span>
+            <span className="text-[10px] text-slate-500 font-semibold ml-1.5">103 Contracts</span>
+          </div>
+          <div>
+            <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Raw Farm Sourcing</span>
+            <span className="font-extrabold text-[#D97706] text-sm">₫1,312.2B</span>
+            <span className="text-[10px] text-slate-500 font-semibold ml-1.5">56 Co-ops</span>
+          </div>
+          <div>
+            <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Active Workforce</span>
+            <span className="font-extrabold text-[#059669] text-sm">68 Personnel</span>
+            <span className="text-[10px] text-emerald-600 font-bold ml-1.5">95.8% Retention</span>
+          </div>
         </div>
       </div>
 
       {/* ─────────────────────────────────────────────────────────────
-          2. MODULE PRESENTATION TABS SELECTOR
+          2. SEGMENTED PRESENTATION MODULE SELECTOR
       ───────────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between border-b border-slate-200 pb-3 gap-2 flex-wrap print:hidden">
-        <div className="flex items-center space-x-1 sm:space-x-2 overflow-x-auto py-1">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-200/80 pb-4 gap-3 print:hidden">
+        {/* Module Switcher Tabs */}
+        <div className="inline-flex p-1 bg-slate-100/90 rounded-xl border border-slate-200/80 space-x-1 overflow-x-auto shadow-inner">
           <button
             onClick={() => setSelectedModule('ALL')}
-            className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center space-x-2 ${
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center space-x-2 ${
               selectedModule === 'ALL'
-                ? 'bg-[#1E40AF] text-white shadow-sm'
-                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                ? 'bg-white text-[#1E40AF] shadow-xs border border-slate-200/60'
+                : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             <Layers className="w-3.5 h-3.5" />
@@ -330,162 +369,167 @@ export default function MainDashboard({ onNavigate }) {
 
           <button
             onClick={() => setSelectedModule('SALES')}
-            className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center space-x-2 ${
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center space-x-2 ${
               selectedModule === 'SALES'
-                ? 'bg-[#1E40AF] text-white shadow-sm'
-                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                ? 'bg-[#1E40AF] text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            <Receipt className="w-3.5 h-3.5 text-blue-400" />
+            <Receipt className="w-3.5 h-3.5 text-blue-300" />
             <span>SALES & EXPORT</span>
           </button>
 
           <button
             onClick={() => setSelectedModule('PURCHASE')}
-            className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center space-x-2 ${
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center space-x-2 ${
               selectedModule === 'PURCHASE'
-                ? 'bg-[#D97706] text-white shadow-sm'
-                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                ? 'bg-[#D97706] text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            <ShoppingCart className="w-3.5 h-3.5 text-amber-300" />
-            <span>PURCHASE & PROCUREMENT</span>
+            <ShoppingCart className="w-3.5 h-3.5 text-amber-200" />
+            <span>PURCHASE & SOURCING</span>
           </button>
 
           <button
             onClick={() => setSelectedModule('HR')}
-            className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center space-x-2 ${
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center space-x-2 ${
               selectedModule === 'HR'
-                ? 'bg-[#059669] text-white shadow-sm'
-                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                ? 'bg-[#059669] text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            <Users className="w-3.5 h-3.5 text-emerald-300" />
-            <span>HR & PEOPLE OPERATIONS</span>
+            <Users className="w-3.5 h-3.5 text-emerald-200" />
+            <span>HR & WORKFORCE</span>
           </button>
         </div>
 
-        {/* Active Module Indicator Badge */}
-        <div className="text-xs text-slate-500 font-medium">
-          Showing: <strong className="text-slate-800">
-            {selectedModule === 'ALL' && 'Full Enterprise Tri-Module Deck'}
-            {selectedModule === 'SALES' && 'Sales Order Lifecycle & Commodity Revenue'}
-            {selectedModule === 'PURCHASE' && 'Procurement Spend & Supplier Allocation'}
-            {selectedModule === 'HR' && 'Department Headcount, Appraisals & Payroll'}
+        {/* Perspective Label */}
+        <div className="text-xs text-slate-500 font-medium flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full bg-blue-600"></span>
+          <span>Scope:</span>
+          <strong className="text-slate-800">
+            {selectedModule === 'ALL' && 'Unified Tri-Module Executive Suite'}
+            {selectedModule === 'SALES' && 'Global Sales Contracts & Commodity Mix'}
+            {selectedModule === 'PURCHASE' && 'Direct Farm Sourcing & Cooperative Spend'}
+            {selectedModule === 'HR' && 'Bi-National Team, Appraisals & Payroll CTC'}
           </strong>
         </div>
       </div>
 
       {/* ─────────────────────────────────────────────────────────────
-          3. MODULE FOCUSED HIGHLIGHTS BAR
+          3. MODULE SPOTLIGHT BANNERS (WHEN DRILLING DOWN)
       ───────────────────────────────────────────────────────────── */}
       {selectedModule === 'SALES' && (
-        <div className="bg-gradient-to-r from-blue-900 to-indigo-900 text-white rounded-xl p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1">
+        <div className="bg-gradient-to-r from-blue-900 via-indigo-950 to-blue-950 text-white rounded-2xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 border border-blue-800/40">
+          <div className="space-y-1.5">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-blue-200">Executive Sales Portfolio</span>
-              <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">96.4% On-Time Fulfillment</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-blue-200">Executive Sales Deck</span>
+              <span className="px-2.5 py-0.5 text-[10px] font-bold rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                ✓ 96.4% On-Time Global Fulfillment
+              </span>
             </div>
-            <h2 className="text-lg font-bold">International Spice & Agro Export Distribution</h2>
-            <p className="text-xs text-blue-100/80">Interactive analysis of {salesCharts.total_orders} active sales orders, commodity volume mix, and export destination markets.</p>
+            <h2 className="text-lg font-extrabold tracking-tight">International Spice & Agro Export Revenue</h2>
+            <p className="text-xs text-blue-100/80 max-w-2xl">
+              Real-time portfolio analytics across {salesCharts.total_orders} active trade contracts, containerized logistics, and multi-currency LC settlements.
+            </p>
           </div>
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={() => onNavigate('sales_orders')}
-              className="px-4 py-2 bg-white text-[#1E40AF] hover:bg-blue-50 text-xs font-bold rounded-lg shadow-sm transition-colors flex items-center gap-1.5"
-            >
-              <span>View All Sales Orders</span>
-              <ChevronRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
+          <button 
+            onClick={() => onNavigate('sales_orders')}
+            className="px-4 py-2.5 bg-white text-[#1E40AF] hover:bg-blue-50 text-xs font-bold rounded-xl shadow-sm transition-all flex items-center gap-1.5 shrink-0"
+          >
+            <span>View All Sales Orders</span>
+            <ChevronRight className="w-4 h-4" />
+          </button>
         </div>
       )}
 
       {selectedModule === 'PURCHASE' && (
-        <div className="bg-gradient-to-r from-amber-900 to-stone-900 text-white rounded-xl p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1">
+        <div className="bg-gradient-to-r from-amber-950 via-stone-900 to-amber-900 text-white rounded-2xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 border border-amber-800/40">
+          <div className="space-y-1.5">
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold uppercase tracking-wider text-amber-200">Procurement & Sourcing Deck</span>
-              <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">14 Days Avg Farm Gate Lead Time</span>
+              <span className="px-2.5 py-0.5 text-[10px] font-bold rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                14 Days Average Farm Gate Lead Time
+              </span>
             </div>
-            <h2 className="text-lg font-bold">Raw Material Procurement & Farm Sourcing Spend</h2>
-            <p className="text-xs text-amber-100/80">Analysis of ₫1,312.2B ($5.42M) raw spice procurement, cooperative supplier allocation, and goods receipt status.</p>
+            <h2 className="text-lg font-extrabold tracking-tight">Raw Material Procurement & Farm Sourcing Spend</h2>
+            <p className="text-xs text-amber-100/80 max-w-2xl">
+              Tracking ₫1,312.2B ($5.42M) spend across Gia Lai, Dak Lak and Yen Bai partner cooperatives, GRN warehouse receipts, and vendor payments.
+            </p>
           </div>
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={() => onNavigate('procurement')}
-              className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-900 text-xs font-bold rounded-lg shadow-sm transition-colors flex items-center gap-1.5"
-            >
-              <span>Open Procurement Module</span>
-              <ChevronRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
+          <button 
+            onClick={() => onNavigate('procurement')}
+            className="px-4 py-2.5 bg-[#D97706] hover:bg-amber-500 text-slate-900 text-xs font-bold rounded-xl shadow-sm transition-all flex items-center gap-1.5 shrink-0"
+          >
+            <span>Open Procurement Module</span>
+            <ChevronRight className="w-4 h-4" />
+          </button>
         </div>
       )}
 
       {selectedModule === 'HR' && (
-        <div className="bg-gradient-to-r from-emerald-950 to-teal-900 text-white rounded-xl p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1">
+        <div className="bg-gradient-to-r from-emerald-950 via-teal-950 to-slate-950 text-white rounded-2xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 border border-emerald-800/40">
+          <div className="space-y-1.5">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-emerald-200">People Operations & Talent Analytics</span>
-              <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">95.8% Employee Retention</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-emerald-200">Human Capital & Talent Analytics</span>
+              <span className="px-2.5 py-0.5 text-[10px] font-bold rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                95.8% Employee Retention Rate
+              </span>
             </div>
-            <h2 className="text-lg font-bold">Bi-National Workforce, 9-Box Appraisals & Payroll</h2>
-            <p className="text-xs text-emerald-100/80">Departmental headcount breakdown across {hrCharts.total_headcount} active personnel, 9-Box performance rubric, and CTC allocation.</p>
+            <h2 className="text-lg font-extrabold tracking-tight">Bi-National Workforce, 9-Box Appraisals & Payroll</h2>
+            <p className="text-xs text-emerald-100/80 max-w-2xl">
+              Distribution of {hrCharts.total_headcount} certified plant and trade personnel, appraisal rating rubric (4.28 Avg), and monthly compensation CTC.
+            </p>
           </div>
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={() => onNavigate('employees')}
-              className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-900 text-xs font-bold rounded-lg shadow-sm transition-colors flex items-center gap-1.5"
-            >
-              <span>Open Employee Directory</span>
-              <ChevronRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
+          <button 
+            onClick={() => onNavigate('employees')}
+            className="px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold rounded-xl shadow-sm transition-all flex items-center gap-1.5 shrink-0"
+          >
+            <span>Open Employee Directory</span>
+            <ChevronRight className="w-4 h-4" />
+          </button>
         </div>
       )}
 
       {/* ─────────────────────────────────────────────────────────────
-          4. MAIN PRESENTATION PIE & DONUT CHARTS
+          4. MAIN PRESENTATION PIE & DONUT CHARTS (3-COLUMN GRID)
       ───────────────────────────────────────────────────────────── */}
       
-      {/* ── MODULE 1: SALES & EXPORT CHARTS ── */}
+      {/* ── SALES & EXPORT MODULE ── */}
       {(selectedModule === 'ALL' || selectedModule === 'SALES') && (
-        <div className="space-y-3">
+        <div className="space-y-3.5">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <div className="w-2.5 h-2.5 rounded-full bg-[#1E40AF]"></div>
-              <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+            <div className="flex items-center space-x-2.5">
+              <span className="w-3 h-3 rounded-full bg-[#1E40AF]"></span>
+              <h2 className="text-xs font-black text-slate-900 uppercase tracking-wider">
                 Sales & Export Distribution Analytics
               </h2>
             </div>
             <button
               onClick={() => onNavigate('sales_orders')}
-              className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1"
+              className="text-xs font-bold text-blue-700 hover:text-blue-900 flex items-center gap-1"
             >
-              <span>Sales Orders & Invoices</span>
-              <ArrowUpRight className="w-3 h-3" />
+              <span>Sales Orders & Invoices →</span>
             </button>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-            {/* Chart 1: Sales Order Lifecycle (Donut) */}
             <PieDonutChart
               title="Sales Order Lifecycle Stages"
-              subtitle="Breakdown of pipeline value across delivery & invoicing status"
+              subtitle="Pipeline revenue distribution across delivery and invoicing stages"
               data={salesCharts.by_status}
               currency="$"
               isDonut={true}
-              centerLabel="TOTAL VALUE"
+              centerLabel="TOTAL PIPELINE"
               centerValue="$7.85M"
               centerSub="103 Orders Active"
               onSliceClick={() => onNavigate('sales_orders')}
             />
 
-            {/* Chart 2: Commodity Revenue Mix (Pie) */}
             <PieDonutChart
               title="Commodity Portfolio Revenue Share"
-              subtitle="Value & volume split across whole spices & commodities"
+              subtitle="Volume & value split across whole spices and agricultural lines"
               data={salesCharts.by_commodity}
               currency="$"
               isDonut={false}
@@ -494,59 +538,55 @@ export default function MainDashboard({ onNavigate }) {
               onSliceClick={() => onNavigate('products')}
             />
 
-            {/* Chart 3: Export Regional Territory Share (Donut) */}
             <PieDonutChart
               title="Global Export Territory Allocation"
-              subtitle="Export revenue distribution across overseas destination hubs"
+              subtitle="Overseas destination split across ASEAN, GCC, Europe and Americas"
               data={salesCharts.by_territory}
               currency="$"
               isDonut={true}
-              centerLabel="GLOBAL REACH"
+              centerLabel="DESTINATIONS"
               centerValue="4 Continents"
-              centerSub="ASEAN & GCC Primary"
+              centerSub="ASEAN Primary"
               onSliceClick={() => onNavigate('export')}
             />
           </div>
         </div>
       )}
 
-      {/* ── MODULE 2: PURCHASE & PROCUREMENT CHARTS ── */}
+      {/* ── PURCHASE & PROCUREMENT MODULE ── */}
       {(selectedModule === 'ALL' || selectedModule === 'PURCHASE') && (
-        <div className="space-y-3 pt-2">
+        <div className="space-y-3.5 pt-2">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <div className="w-2.5 h-2.5 rounded-full bg-[#D97706]"></div>
-              <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+            <div className="flex items-center space-x-2.5">
+              <span className="w-3 h-3 rounded-full bg-[#D97706]"></span>
+              <h2 className="text-xs font-black text-slate-900 uppercase tracking-wider">
                 Purchase & Procurement Sourcing Analytics
               </h2>
             </div>
             <button
               onClick={() => onNavigate('procurement')}
-              className="text-xs font-semibold text-amber-700 hover:text-amber-900 flex items-center gap-1"
+              className="text-xs font-bold text-amber-800 hover:text-amber-950 flex items-center gap-1"
             >
-              <span>Purchase Orders & GRN</span>
-              <ArrowUpRight className="w-3 h-3" />
+              <span>Purchase Orders & GRN →</span>
             </button>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-            {/* Chart 4: PO Lifecycle Status (Donut) */}
             <PieDonutChart
               title="Purchase Order Lifecycle Status"
-              subtitle="Raw material order stages from draft RFQ to fully received"
+              subtitle="Raw spice sourcing orders from draft RFQ to fully received"
               data={procurementCharts.by_status}
               currency="$"
               isDonut={true}
-              centerLabel="TOTAL SPEND"
+              centerLabel="TOTAL SOURCING"
               centerValue="$5.42M"
               centerSub="318 Purchase Orders"
               onSliceClick={() => onNavigate('procurement')}
             />
 
-            {/* Chart 5: Sourcing Category Spend (Pie) */}
             <PieDonutChart
-              title="Raw Spice & Sourcing Spend Allocation"
-              subtitle="Budget allocation across raw spices, packaging & freight"
+              title="Raw Material & Sourcing Spend"
+              subtitle="Capital allocation across raw whole spices, packaging and drayage"
               data={procurementCharts.by_category}
               currency="$"
               isDonut={false}
@@ -555,15 +595,14 @@ export default function MainDashboard({ onNavigate }) {
               onSliceClick={() => onNavigate('procurement')}
             />
 
-            {/* Chart 6: Top Supplier & Cooperative Allocation (Donut) */}
             <PieDonutChart
-              title="Top Certified Suppliers & Co-ops"
-              subtitle="Concentration of purchase budget across key farm cooperatives"
+              title="Certified Supplier & Co-op Allocation"
+              subtitle="Concentration of purchase budget across key regional cooperatives"
               data={procurementCharts.by_supplier}
               currency="$"
               isDonut={true}
-              centerLabel="SUPPLIERS"
-              centerValue="56 Active"
+              centerLabel="COOPERATIVES"
+              centerValue="56 Certified"
               centerSub="Top 5 Shown"
               onSliceClick={() => onNavigate('suppliers')}
             />
@@ -571,53 +610,49 @@ export default function MainDashboard({ onNavigate }) {
         </div>
       )}
 
-      {/* ── MODULE 3: HR & WORKFORCE CHARTS ── */}
+      {/* ── HR & WORKFORCE MODULE ── */}
       {(selectedModule === 'ALL' || selectedModule === 'HR') && (
-        <div className="space-y-3 pt-2">
+        <div className="space-y-3.5 pt-2">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <div className="w-2.5 h-2.5 rounded-full bg-[#059669]"></div>
-              <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+            <div className="flex items-center space-x-2.5">
+              <span className="w-3 h-3 rounded-full bg-[#059669]"></span>
+              <h2 className="text-xs font-black text-slate-900 uppercase tracking-wider">
                 Human Resources & People Operations Analytics
               </h2>
             </div>
             <button
               onClick={() => onNavigate('employees')}
-              className="text-xs font-semibold text-emerald-700 hover:text-emerald-900 flex items-center gap-1"
+              className="text-xs font-bold text-emerald-800 hover:text-emerald-950 flex items-center gap-1"
             >
-              <span>Employee Directory & Appraisals</span>
-              <ArrowUpRight className="w-3 h-3" />
+              <span>Employee Directory & Appraisals →</span>
             </button>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-            {/* Chart 7: Headcount by Department (Donut) */}
             <PieDonutChart
-              title="Workforce Headcount by Department"
-              subtitle="Staff distribution across export, operations, QA and admin"
+              title="Workforce Distribution by Department"
+              subtitle="Headcount split across sales, procurement, plant milling, and QA"
               data={hrCharts.by_department}
               isDonut={true}
-              centerLabel="TOTAL STAFF"
+              centerLabel="TOTAL HEADCOUNT"
               centerValue={`${hrCharts.total_headcount} Staff`}
               centerSub="Bi-National Team"
               onSliceClick={() => onNavigate('employees')}
             />
 
-            {/* Chart 8: Talent Appraisal Rating Bands (Pie) */}
             <PieDonutChart
-              title="Talent Performance & Appraisal Bands"
-              subtitle="9-Box appraisal rating breakdown across active team members"
+              title="Talent Performance Appraisal Bands"
+              subtitle="9-Box appraisal rating bands across verified staff members"
               data={hrCharts.by_performance_band}
               isDonut={false}
-              centerLabel="AVG SCORE"
+              centerLabel="AVG RATING"
               centerValue={hrCharts.avg_rating}
               onSliceClick={() => onNavigate('performance')}
             />
 
-            {/* Chart 9: Monthly Compensation & CTC Allocation (Donut) */}
             <PieDonutChart
-              title="Compensation & Monthly CTC Breakdown"
-              subtitle="Monthly payroll split across base wages, incentives and benefits"
+              title="Monthly Compensation & CTC Breakdown"
+              subtitle="Payroll disbursement split across basic wages, incentives and benefits"
               data={hrCharts.by_payroll_cost}
               currency="$"
               isDonut={true}
@@ -631,18 +666,18 @@ export default function MainDashboard({ onNavigate }) {
       )}
 
       {/* ─────────────────────────────────────────────────────────────
-          5. OPERATIONAL KPI METRICS SUMMARY GRID
+          5. CLASSIC ENTERPRISE OPERATIONAL KPI CARDS
       ───────────────────────────────────────────────────────────── */}
       {!isPitchMode && (
-        <div className="space-y-3 pt-4 border-t border-slate-200">
+        <div className="space-y-3.5 pt-4 border-t border-slate-200/80">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <BarChart3 className="w-4 h-4 text-slate-600" />
-              <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
-                Operational Highlights & Key Indicators
+              <h2 className="text-xs font-black text-slate-900 uppercase tracking-wider">
+                Operational Ledger & Master Indicators
               </h2>
             </div>
-            <span className="text-xs text-slate-500 font-medium">Click any metric card to jump to operational view</span>
+            <span className="text-xs text-slate-500 font-medium">Click any card to jump to module</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -652,11 +687,11 @@ export default function MainDashboard({ onNavigate }) {
                 <div 
                   key={idx}
                   onClick={() => onNavigate(card.action)}
-                  className="bg-white rounded-xl border border-slate-200/90 p-5 shadow-sm hover:shadow-md hover:border-[#BFDBFE] transition-all cursor-pointer flex flex-col justify-between group"
+                  className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-[0_1px_4px_rgba(0,0,0,0.03)] hover:shadow-md hover:border-blue-200 transition-all cursor-pointer flex flex-col justify-between group"
                 >
                   <div className="flex items-start justify-between">
                     <div className="space-y-2 flex-1 pr-3">
-                      <div className="space-y-1">
+                      <div className="space-y-1.5">
                         {card.lines.map((line, lIdx) => (
                           <div key={lIdx} className="flex flex-wrap items-baseline justify-between text-xs">
                             <span className="font-semibold text-slate-600 uppercase tracking-wide text-[11px]">
@@ -672,7 +707,7 @@ export default function MainDashboard({ onNavigate }) {
                       </div>
                     </div>
 
-                    <div className={`w-11 h-11 rounded-lg ${card.iconBg} text-white flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:scale-105`}>
+                    <div className={`w-11 h-11 rounded-xl ${card.iconBg} text-white flex items-center justify-center shrink-0 shadow-xs transition-transform group-hover:scale-105`}>
                       <Icon className="w-5 h-5" />
                     </div>
                   </div>
@@ -681,7 +716,7 @@ export default function MainDashboard({ onNavigate }) {
                     <span className="text-[11px] font-bold text-slate-400 tracking-wider uppercase group-hover:text-[#1E40AF] transition-colors">
                       {card.title}
                     </span>
-                    <ArrowUpRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#D97706] transition-colors" />
+                    <ArrowUpRight className="w-4 h-4 text-slate-400 group-hover:text-[#D97706] transition-colors" />
                   </div>
                 </div>
               );
