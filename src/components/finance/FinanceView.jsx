@@ -87,15 +87,66 @@ export default function FinanceView() {
   };
 
   const handleStatusUpdate = async (soId, newStatus) => {
-    setOrders(prev => prev.map(so => so.id === soId ? { ...so, status: newStatus } : so));
+    setSalesOrders(prev => prev.map(so => {
+      if (so.id === soId) {
+        const grandTotal = Number(so.grand_total || 0);
+        let paid = Number(so.paid_amount || 0);
+        let out = Number(so.outstanding_amount ?? (grandTotal - paid));
+        if (newStatus === 'PARTIALLY_PAID') {
+          paid = Number((grandTotal * 0.5).toFixed(2));
+          out = Number((grandTotal - paid).toFixed(2));
+        } else if (newStatus === 'PAID') {
+          paid = grandTotal;
+          out = 0.0;
+        } else if (newStatus === 'CLOSED') {
+          if (paid < grandTotal) {
+            paid = grandTotal;
+            out = 0.0;
+          }
+        } else if (newStatus === 'DRAFT') {
+          paid = 0.0;
+          out = grandTotal;
+        }
+        return { ...so, status: newStatus, paid_amount: paid, outstanding_amount: out };
+      }
+      return so;
+    }));
+
     if (selectedSO && selectedSO.id === soId) {
-      setSelectedSO(prev => (prev ? { ...prev, status: newStatus } : null));
+      setSelectedSO(prev => {
+        if (!prev) return null;
+        const grandTotal = Number(prev.grand_total || 0);
+        let paid = Number(prev.paid_amount || 0);
+        let out = Number(prev.outstanding_amount ?? (grandTotal - paid));
+        if (newStatus === 'PARTIALLY_PAID') {
+          paid = Number((grandTotal * 0.5).toFixed(2));
+          out = Number((grandTotal - paid).toFixed(2));
+        } else if (newStatus === 'PAID') {
+          paid = grandTotal;
+          out = 0.0;
+        } else if (newStatus === 'CLOSED') {
+          if (paid < grandTotal) {
+            paid = grandTotal;
+            out = 0.0;
+          }
+        } else if (newStatus === 'DRAFT') {
+          paid = 0.0;
+          out = grandTotal;
+        }
+        return { ...prev, status: newStatus, paid_amount: paid, outstanding_amount: out };
+      });
     }
-    notify('success', `Sales Order status updated to ${newStatus.replace(/_/g, ' ')}.`);
+
+    notify('success', `Sales Order status advanced to ${newStatus.replace(/_/g, ' ')}.`);
 
     try {
       const res = await api.updateSOStatus(soId, { status: newStatus });
-      if (res) {
+      if (res && res.data) {
+        setSalesOrders(prev => prev.map(so => so.id === soId ? { ...so, ...res.data } : so));
+        if (selectedSO && selectedSO.id === soId) {
+          setSelectedSO(prev => (prev ? { ...prev, ...res.data } : null));
+        }
+      } else {
         loadData();
       }
     } catch (e) {
@@ -651,43 +702,75 @@ function SalesOrderList({ orders, onSelect, onStatusUpdate, onCreateNew, onViewP
                     {so.status === 'INVOICED' && (
                       <>
                         <button
+                          onClick={() => onStatusUpdate(so.id, 'PARTIALLY_PAID')}
+                          className="text-[10px] font-bold text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 px-2 py-1 rounded transition whitespace-nowrap"
+                          title="Record Partial Payment (50%)"
+                        >
+                          Partial Paid
+                        </button>
+                        <button
                           onClick={() => onStatusUpdate(so.id, 'PAID')}
-                          className="text-[10px] font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-2 py-1 rounded transition whitespace-nowrap"
-                          title="Record Full Settlement"
+                          className="text-[10px] font-bold text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-2 py-1 rounded transition whitespace-nowrap"
+                          title="Record Full Settlement (100%)"
                         >
                           Mark Paid
                         </button>
                         <button
-                          onClick={() => onStatusUpdate(so.id, 'PARTIALLY_PAID')}
-                          className="text-[10px] font-bold text-amber-600 bg-amber-50 hover:bg-amber-100 px-2 py-1 rounded transition whitespace-nowrap"
-                          title="Record Partial Payment"
+                          onClick={() => onStatusUpdate(so.id, 'CANCELLED')}
+                          className="text-[10px] font-bold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-2 py-1 rounded transition whitespace-nowrap"
+                          title="Cancel Order"
                         >
-                          Partial Paid
+                          Cancel
                         </button>
                       </>
                     )}
                     {so.status === 'PARTIALLY_PAID' && (
-                      <button
-                        onClick={() => onStatusUpdate(so.id, 'PAID')}
-                        className="text-[10px] font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-2 py-1 rounded transition whitespace-nowrap"
-                        title="Complete Full Payment"
-                      >
-                        Mark Paid
-                      </button>
+                      <>
+                        <button
+                          onClick={() => onStatusUpdate(so.id, 'PAID')}
+                          className="text-[10px] font-bold text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-2 py-1 rounded transition whitespace-nowrap"
+                          title="Settle Balance & Mark Full Paid (100%)"
+                        >
+                          Mark Full Paid
+                        </button>
+                        <button
+                          onClick={() => onStatusUpdate(so.id, 'CLOSED')}
+                          className="text-[10px] font-bold text-slate-600 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded transition whitespace-nowrap"
+                          title="Close Short Settlement"
+                        >
+                          Close
+                        </button>
+                        <button
+                          onClick={() => onStatusUpdate(so.id, 'CANCELLED')}
+                          className="text-[10px] font-bold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-2 py-1 rounded transition whitespace-nowrap"
+                          title="Cancel Balance"
+                        >
+                          Cancel
+                        </button>
+                      </>
                     )}
                     {so.status === 'PAID' && (
                       <button
                         onClick={() => onStatusUpdate(so.id, 'CLOSED')}
-                        className="text-[10px] font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded transition whitespace-nowrap"
+                        className="text-[10px] font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-2 py-1 rounded transition whitespace-nowrap"
                         title="Close Completed Order"
                       >
                         Close
                       </button>
                     )}
+                    {so.status === 'CLOSED' && (
+                      <button
+                        onClick={() => onStatusUpdate(so.id, 'DRAFT')}
+                        className="text-[10px] font-bold text-slate-600 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded transition whitespace-nowrap"
+                        title="Reopen Order as Draft"
+                      >
+                        Reopen
+                      </button>
+                    )}
                     {so.status === 'CANCELLED' && (
                       <button
                         onClick={() => onStatusUpdate(so.id, 'DRAFT')}
-                        className="text-[10px] font-bold text-amber-600 bg-amber-50 hover:bg-amber-100 px-2 py-1 rounded transition whitespace-nowrap"
+                        className="text-[10px] font-bold text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 px-2 py-1 rounded transition whitespace-nowrap"
                         title="Reopen Order"
                       >
                         Reopen
@@ -1597,13 +1680,19 @@ function SODetailDrawer({ so, onClose, onStatusUpdate, onViewPdf }) {
                     onClick={() => onStatusUpdate(so.id, 'PAID')}
                     className="px-3 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition"
                   >
-                    Mark Full Paid
+                    Settle Balance & Mark Full Paid (100%)
                   </button>
                   <button
                     onClick={() => onStatusUpdate(so.id, 'CLOSED')}
                     className="px-3 py-1.5 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition"
                   >
                     Close Order
+                  </button>
+                  <button
+                    onClick={() => onStatusUpdate(so.id, 'CANCELLED')}
+                    className="px-3 py-1.5 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-lg transition"
+                  >
+                    Cancel Balance
                   </button>
                 </>
               )}
@@ -1615,6 +1704,17 @@ function SODetailDrawer({ so, onClose, onStatusUpdate, onViewPdf }) {
                   Close Completed Order
                 </button>
               )}
+              {so.status === 'CLOSED' && (
+                <div className="flex items-center space-x-2">
+                  <span className="text-xs text-emerald-700 font-semibold bg-emerald-50 px-2.5 py-1 rounded">✓ Completed & Closed</span>
+                  <button
+                    onClick={() => onStatusUpdate(so.id, 'DRAFT')}
+                    className="px-3 py-1.5 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition"
+                  >
+                    Reopen as Draft
+                  </button>
+                </div>
+              )}
               {so.status === 'CANCELLED' && (
                 <button
                   onClick={() => onStatusUpdate(so.id, 'DRAFT')}
@@ -1622,9 +1722,6 @@ function SODetailDrawer({ so, onClose, onStatusUpdate, onViewPdf }) {
                 >
                   Reopen as Draft
                 </button>
-              )}
-              {so.status === 'CLOSED' && (
-                <span className="text-xs text-slate-400 italic">This sales order is completed and closed.</span>
               )}
             </div>
           </div>

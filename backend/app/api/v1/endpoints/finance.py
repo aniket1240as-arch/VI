@@ -1,4 +1,5 @@
 import time
+from datetime import datetime
 from fastapi import APIRouter, HTTPException, Query
 from typing import List, Optional
 from ....repositories import get_repository
@@ -140,6 +141,66 @@ def update_so_status(so_id: str, update: SalesOrderStatusUpdate):
         items = so_items_repo.get_all(filters={"so_id": so_id}, limit=100)
         for item in items:
             so_items_repo.update(item["id"], {"billed_qty": item.get("quantity", 0.0)})
+
+        # Check if invoice exists, if not auto-create
+        existing_invoices = invoice_repo.get_all(filters={"sales_order_id": so_id}, limit=5)
+        if not existing_invoices and existing.get("so_number"):
+            existing_invoices = invoice_repo.get_all(filters={"so_number": existing.get("so_number")}, limit=5)
+
+        if not existing_invoices:
+            ts = int(time.time() * 1000) % 100000
+            inv_id = f"INV-{ts}"
+            inv_number = f"INV-2026-{ts:05d}"
+            today_str = datetime.now().strftime("%Y-%m-%d")
+            inv_data = {
+                "id": inv_id,
+                "invoice_number": inv_number,
+                "customer_id": existing.get("customer_id") or "CUST-001",
+                "customer_name": existing.get("customer_name") or "Commercial Customer",
+                "sales_order_id": so_id,
+                "so_number": existing.get("so_number") or "",
+                "invoice_date": today_str,
+                "due_date": today_str,
+                "currency": existing.get("currency") or "USD",
+                "exchange_rate": 1.0,
+                "payment_terms": existing.get("payment_terms") or "Net 30",
+                "remarks": f"Commercial invoice generated for Sales Order {existing.get('so_number')}",
+                "subtotal": round(float(existing.get("subtotal") or grand_total), 2),
+                "tax_amount": round(float(existing.get("tax_amount") or 0.0), 2),
+                "grand_total": round(grand_total, 2),
+                "paid_amount": 0.0,
+                "outstanding_amount": round(grand_total, 2),
+                "status": "SUBMITTED",
+            }
+            invoice_repo.create(inv_data)
+            for idx, it in enumerate(items):
+                item_tax = (it.get("quantity", 0) * it.get("rate", 0)) * (it.get("tax_rate", 0) / 100.0)
+                invoice_items_repo.create({
+                    "id": f"INVI-{ts}-{idx+1}",
+                    "invoice_id": inv_id,
+                    "item_code": it.get("item_code") or f"ITM-{idx+1}",
+                    "item_name": it.get("item_name") or "Item",
+                    "description": it.get("description") or "",
+                    "quantity": it.get("quantity", 0.0),
+                    "rate": it.get("rate", 0.0),
+                    "tax_rate": it.get("tax_rate", 0.0),
+                    "tax_amount": round(item_tax, 2),
+                    "amount": round(it.get("amount", 0.0), 2)
+                })
+    elif new_st == "PARTIALLY_PAID":
+        half = round(grand_total * 0.5, 2)
+        update_data["paid_amount"] = half
+        update_data["outstanding_amount"] = round(grand_total - half, 2)
+        # Synchronize linked invoice
+        invoices = invoice_repo.get_all(filters={"sales_order_id": so_id}, limit=5)
+        if not invoices and existing.get("so_number"):
+            invoices = invoice_repo.get_all(filters={"so_number": existing.get("so_number")}, limit=5)
+        for inv in invoices:
+            invoice_repo.update(inv["id"], {
+                "paid_amount": half,
+                "outstanding_amount": round(grand_total - half, 2),
+                "status": "PARTIALLY_PAID"
+            })
     elif new_st == "PAID":
         update_data["paid_amount"] = grand_total
         update_data["outstanding_amount"] = 0.0
@@ -149,10 +210,23 @@ def update_so_status(so_id: str, update: SalesOrderStatusUpdate):
                 "delivered_qty": item.get("quantity", 0.0),
                 "billed_qty": item.get("quantity", 0.0)
             })
-    elif new_st == "PARTIALLY_PAID":
-        half = round(grand_total * 0.5, 2)
-        update_data["paid_amount"] = half
-        update_data["outstanding_amount"] = round(grand_total - half, 2)
+        # Synchronize linked invoice
+        invoices = invoice_repo.get_all(filters={"sales_order_id": so_id}, limit=5)
+        if not invoices and existing.get("so_number"):
+            invoices = invoice_repo.get_all(filters={"so_number": existing.get("so_number")}, limit=5)
+        for inv in invoices:
+            invoice_repo.update(inv["id"], {
+                "paid_amount": grand_total,
+                "outstanding_amount": 0.0,
+                "status": "PAID"
+            })
+    elif new_st == "CLOSED":
+        if float(existing.get("paid_amount") or 0.0) >= grand_total or existing.get("status") == "PAID":
+            update_data["paid_amount"] = grand_total
+            update_data["outstanding_amount"] = 0.0
+    elif new_st == "DRAFT":
+        update_data["paid_amount"] = 0.0
+        update_data["outstanding_amount"] = grand_total
 
     so_repo.update(so_id, update_data)
     updated = so_repo.get_by_id(so_id)
