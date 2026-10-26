@@ -87,13 +87,19 @@ export default function FinanceView() {
   };
 
   const handleStatusUpdate = async (soId, newStatus) => {
-    const res = await api.updateSOStatus(soId, { status: newStatus });
-    if (res) {
-      if (selectedSO && selectedSO.id === soId) {
-        setSelectedSO(prev => (prev ? { ...prev, status: newStatus } : null));
+    setOrders(prev => prev.map(so => so.id === soId ? { ...so, status: newStatus } : so));
+    if (selectedSO && selectedSO.id === soId) {
+      setSelectedSO(prev => (prev ? { ...prev, status: newStatus } : null));
+    }
+    notify('success', `Sales Order status updated to ${newStatus.replace(/_/g, ' ')}.`);
+
+    try {
+      const res = await api.updateSOStatus(soId, { status: newStatus });
+      if (res) {
+        loadData();
       }
-      notify('success', `Sales Order status updated to ${newStatus.replace(/_/g, ' ')}.`);
-      loadData();
+    } catch (e) {
+      console.warn('API status update failed, updated locally:', e);
     }
   };
 

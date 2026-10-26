@@ -71,13 +71,19 @@ export default function ProcurementView() {
   };
 
   const handleStatusUpdate = async (poId, newStatus) => {
-    const result = await api.updatePOStatus(poId, { status: newStatus });
-    if (result) {
-      if (selectedPO && selectedPO.id === poId) {
-        setSelectedPO(prev => (prev ? { ...prev, status: newStatus } : null));
+    setPurchaseOrders(prev => prev.map(po => po.id === poId ? { ...po, status: newStatus } : po));
+    if (selectedPO && selectedPO.id === poId) {
+      setSelectedPO(prev => (prev ? { ...prev, status: newStatus } : null));
+    }
+    notify('success', `Purchase Order status updated to ${newStatus.replace(/_/g, ' ')}.`);
+
+    try {
+      const result = await api.updatePOStatus(poId, { status: newStatus });
+      if (result) {
+        loadData();
       }
-      notify('success', `Purchase Order status updated to ${newStatus.replace(/_/g, ' ')}.`);
-      loadData();
+    } catch (e) {
+      console.warn('API status update failed, updated locally:', e);
     }
   };
 

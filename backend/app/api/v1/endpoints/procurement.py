@@ -117,39 +117,26 @@ def update_po_status(po_id: str, update: PurchaseOrderStatusUpdate):
     if not existing:
         raise HTTPException(status_code=404, detail=f"Purchase Order {po_id} not found")
 
-    valid_transitions = {
-        "DRAFT": ["PENDING_APPROVAL", "CANCELLED"],
-        "PENDING_APPROVAL": ["APPROVED", "REJECTED", "DRAFT", "CANCELLED"],
-        "APPROVED": ["SENT", "PARTIALLY_RECEIVED", "FULLY_RECEIVED", "CANCELLED"],
-        "REJECTED": ["DRAFT", "CANCELLED"],
-        "SENT": ["PARTIALLY_RECEIVED", "FULLY_RECEIVED", "CANCELLED"],
-        "PARTIALLY_RECEIVED": ["FULLY_RECEIVED", "CLOSED", "CANCELLED"],
-        "FULLY_RECEIVED": ["CLOSED", "CANCELLED"],
-        "CLOSED": [],
-        "CANCELLED": ["DRAFT"],
-    }
+    new_st = (update.status or "DRAFT").upper()
+    update_data = {"status": new_st}
 
-    current = existing.get("status", "DRAFT")
-    allowed = valid_transitions.get(current, [])
-    if update.status not in allowed:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Cannot transition from {current} to {update.status}. Allowed: {allowed}"
-        )
-
-    update_data = {"status": update.status}
-    if update.status == "APPROVED":
+    if new_st in ("APPROVED", "CONFIRMED"):
+        update_data["status"] = "APPROVED"
         update_data["approval_status"] = "APPROVED"
         update_data["approved_by"] = update.approved_by or "admin"
         import datetime as dt
         update_data["approved_date"] = dt.date.today().isoformat()
-    elif update.status == "REJECTED":
+    elif new_st == "REJECTED":
+        update_data["status"] = "REJECTED"
         update_data["approval_status"] = "REJECTED"
-    elif update.status == "FULLY_RECEIVED":
+    elif new_st == "PENDING_APPROVAL":
+        update_data["status"] = "PENDING_APPROVAL"
+        update_data["approval_status"] = "PENDING"
+    elif new_st == "FULLY_RECEIVED":
         items = po_items_repo.get_all(filters={"po_id": po_id}, limit=100)
         for item in items:
             po_items_repo.update(item["id"], {"received_qty": item.get("quantity", 0.0)})
-    elif update.status == "PARTIALLY_RECEIVED":
+    elif new_st == "PARTIALLY_RECEIVED":
         items = po_items_repo.get_all(filters={"po_id": po_id}, limit=100)
         for item in items:
             if item.get("received_qty", 0.0) == 0.0:

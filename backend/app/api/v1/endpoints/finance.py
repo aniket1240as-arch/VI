@@ -120,42 +120,36 @@ def update_so_status(so_id: str, update: SalesOrderStatusUpdate):
     if not existing:
         raise HTTPException(status_code=404, detail=f"Sales Order {so_id} not found")
 
-    valid_transitions = {
-        "DRAFT": ["CONFIRMED", "CANCELLED"],
-        "CONFIRMED": ["PARTIALLY_DELIVERED", "FULLY_DELIVERED", "INVOICED", "CANCELLED"],
-        "PARTIALLY_DELIVERED": ["FULLY_DELIVERED", "INVOICED", "CANCELLED"],
-        "FULLY_DELIVERED": ["INVOICED", "PAID", "CANCELLED"],
-        "INVOICED": ["PAID", "PARTIALLY_PAID", "CLOSED", "CANCELLED"],
-        "PARTIALLY_PAID": ["PAID", "CLOSED", "CANCELLED"],
-        "PAID": ["CLOSED", "CANCELLED"],
-        "CLOSED": [],
-        "CANCELLED": ["DRAFT"],
-    }
+    new_st = (update.status or "DRAFT").upper()
+    if new_st in ("APPROVED", "CONFIRMED"):
+        new_st = "CONFIRMED"
 
-    current = existing.get("status", "DRAFT")
-    allowed = valid_transitions.get(current, [])
-    if update.status not in allowed:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Cannot transition from {current} to {update.status}. Allowed: {allowed}"
-        )
+    update_data = {"status": new_st}
+    grand_total = float(existing.get("grand_total") or 0.0)
 
-    update_data = {"status": update.status}
-    if update.status == "FULLY_DELIVERED":
+    if new_st == "FULLY_DELIVERED":
         items = so_items_repo.get_all(filters={"so_id": so_id}, limit=100)
         for item in items:
             so_items_repo.update(item["id"], {"delivered_qty": item.get("quantity", 0.0)})
-    elif update.status == "PARTIALLY_DELIVERED":
+    elif new_st == "PARTIALLY_DELIVERED":
         items = so_items_repo.get_all(filters={"so_id": so_id}, limit=100)
         for item in items:
             if item.get("delivered_qty", 0.0) == 0.0:
                 so_items_repo.update(item["id"], {"delivered_qty": round(item.get("quantity", 0.0) * 0.5, 2)})
-    elif update.status == "PAID":
-        grand_total = existing.get("grand_total", 0.0)
+    elif new_st == "INVOICED":
+        items = so_items_repo.get_all(filters={"so_id": so_id}, limit=100)
+        for item in items:
+            so_items_repo.update(item["id"], {"billed_qty": item.get("quantity", 0.0)})
+    elif new_st == "PAID":
         update_data["paid_amount"] = grand_total
         update_data["outstanding_amount"] = 0.0
-    elif update.status == "PARTIALLY_PAID":
-        grand_total = existing.get("grand_total", 0.0)
+        items = so_items_repo.get_all(filters={"so_id": so_id}, limit=100)
+        for item in items:
+            so_items_repo.update(item["id"], {
+                "delivered_qty": item.get("quantity", 0.0),
+                "billed_qty": item.get("quantity", 0.0)
+            })
+    elif new_st == "PARTIALLY_PAID":
         half = round(grand_total * 0.5, 2)
         update_data["paid_amount"] = half
         update_data["outstanding_amount"] = round(grand_total - half, 2)

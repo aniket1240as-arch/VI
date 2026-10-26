@@ -101,10 +101,16 @@ def create_employee(emp_in: EmployeeCreate):
         name_slug = data["full_name"].lower().replace(" ", ".")
         data["email"] = f"{name_slug}.{next_num}@soilexlifescience.com"
 
+    valid_emp_cols = {
+        "id", "employee_code", "full_name", "email", "phone",
+        "department", "designation", "branch", "shift",
+        "join_date", "status", "avatar_url"
+    }
+    emp_record = {k: v for k, v in data.items() if k in valid_emp_cols}
     try:
-        created = repo.create(data)
+        created = repo.create(emp_record)
     except Exception as e:
-        created = data
+        created = emp_record
 
     if not created or not isinstance(created, dict):
         created = data
@@ -239,7 +245,8 @@ def create_employee(emp_in: EmployeeCreate):
     except Exception:
         pass
 
-    return ApiResponse(message=f"Employee profile created with code {data['employee_code']}", data=EmployeeResponse(**created))
+    created_resp = {**created, "role": data.get("role", "EMPLOYEE")}
+    return ApiResponse(message=f"Employee profile created with code {data['employee_code']}", data=EmployeeResponse(**created_resp))
 
 @router.put("/{id}", response_model=ApiResponse[EmployeeResponse])
 @router.patch("/{id}", response_model=ApiResponse[EmployeeResponse])

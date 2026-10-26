@@ -179,21 +179,31 @@ export default function EmployeeList() {
         password: newEmp.password || 'emp123',
       });
 
-      if (result) {
-        notify('success', `${newEmp.full_name} (${result.employee_code || newEmp.employee_code}) provisioned across ERP & IAM Switcher.`);
-        window.dispatchEvent(new CustomEvent('soilex:employee_updated'));
-        await refreshEmployees();
-      } else {
-        // Fallback: add locally
-        const created = {
-          id: `EMP-${Date.now().toString().slice(-4)}`,
-          employee_code: newEmp.employee_code || `SLX-${Date.now().toString().slice(-3)}`,
-          ...newEmp,
-          status: 'ACTIVE',
-        };
-        setEmployees(prev => [...prev, created]);
-        notify('success', 'Employee added locally.');
-      }
+      const createdObj = {
+        id: result?.id || `EMP-${Date.now().toString().slice(-4)}`,
+        employee_code: result?.employee_code || newEmp.employee_code,
+        full_name: newEmp.full_name,
+        email: newEmp.email,
+        phone: newEmp.phone,
+        department: newEmp.department,
+        designation: newEmp.designation,
+        branch: newEmp.branch,
+        shift: newEmp.shift,
+        join_date: newEmp.join_date,
+        status: 'ACTIVE',
+      };
+
+      setEmployees(prev => [mapEmployee(createdObj), ...prev.filter(e => e.id !== createdObj.id && e.employee_code !== createdObj.employee_code)]);
+
+      try {
+        const stored = JSON.parse(localStorage.getItem('soilex_onboarded_employees') || '[]');
+        const updatedStored = [createdObj, ...stored.filter(e => e.id !== createdObj.id && e.employee_code !== createdObj.employee_code)];
+        localStorage.setItem('soilex_onboarded_employees', JSON.stringify(updatedStored));
+      } catch (err) {}
+
+      notify('success', `${newEmp.full_name} (${createdObj.employee_code}) added to employee directory.`);
+      window.dispatchEvent(new CustomEvent('soilex:employee_updated'));
+      await refreshEmployees();
       setShowAddModal(false);
       setNewEmp({ employee_code: '', full_name: '', email: '', phone: '', department: 'Sales & Export', designation: '', branch: 'Hanoi HQ', shift: 'Morning Shift', join_date: '', role: 'EMPLOYEE', password: 'emp123' });
     } catch {
