@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import {
   ShoppingCart, Package, FileText, Truck, CheckCircle, XCircle, Clock,
   Plus, Search, Filter, ChevronDown, ChevronRight, Eye, Send, ArrowRight,
-  AlertTriangle, TrendingUp, DollarSign, BarChart2, ClipboardList
+  AlertTriangle, TrendingUp, DollarSign, BarChart2, ClipboardList,
+  Download, Printer, Building2, X
 } from 'lucide-react';
 import api from '../../services/api';
 
@@ -35,6 +36,13 @@ export default function ProcurementView() {
   const [showCreatePO, setShowCreatePO] = useState(false);
   const [showCreateGRN, setShowCreateGRN] = useState(false);
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [viewingPdfPO, setViewingPdfPO] = useState(null);
+  const [notification, setNotification] = useState(null);
+
+  const notify = (type, msg) => {
+    setNotification({ type, msg });
+    setTimeout(() => setNotification(null), 3500);
+  };
 
   useEffect(() => {
     loadData();
@@ -57,6 +65,7 @@ export default function ProcurementView() {
     const result = await api.createPurchaseOrder(formData);
     if (result) {
       setShowCreatePO(false);
+      notify('success', 'Purchase Order created successfully.');
       loadData();
     }
   };
@@ -67,6 +76,7 @@ export default function ProcurementView() {
       if (selectedPO && selectedPO.id === poId) {
         setSelectedPO(prev => (prev ? { ...prev, status: newStatus } : null));
       }
+      notify('success', `Purchase Order status updated to ${newStatus.replace(/_/g, ' ')}.`);
       loadData();
     }
   };
@@ -75,8 +85,55 @@ export default function ProcurementView() {
     const result = await api.createGRN(formData);
     if (result) {
       setShowCreateGRN(false);
+      notify('success', 'Goods Receipt Note created successfully.');
       loadData();
     }
+  };
+
+  const handleExportPOCsv = (singlePO = null) => {
+    const listToExport = singlePO ? [singlePO] : filteredPOs;
+    if (!listToExport || listToExport.length === 0) {
+      notify('error', 'No purchase orders to export.');
+      return;
+    }
+    const headers = [
+      'PO Number', 'Supplier Name', 'Order Date', 'Delivery Date', 'Currency',
+      'Incoterms', 'Incoterms Location', 'Delivery Warehouse', 'Payment Terms',
+      'Subtotal', 'Tax Amount', 'Shipping Charges', 'Grand Total', 'Status',
+      'Approval Status', 'Approved By', 'Items Count'
+    ];
+    const rows = listToExport.map(po => [
+      `"${po.po_number || ''}"`,
+      `"${(po.supplier_name || '').replace(/"/g, '""')}"`,
+      po.order_date || '',
+      po.expected_delivery_date || '',
+      po.currency || 'USD',
+      po.incoterms || '',
+      `"${po.incoterms_location || ''}"`,
+      `"${(po.delivery_warehouse || '').replace(/"/g, '""')}"`,
+      `"${po.payment_terms || ''}"`,
+      po.subtotal || 0,
+      po.tax_amount || 0,
+      po.shipping_charges || 0,
+      po.grand_total || 0,
+      po.status || '',
+      po.approval_status || '',
+      `"${po.approved_by || ''}"`,
+      po.items ? po.items.length : 0
+    ]);
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = singlePO
+      ? `soilex_po_${singlePO.po_number || singlePO.id}_${new Date().toISOString().slice(0, 10)}.csv`
+      : `soilex_purchase_orders_${statusFilter}_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    notify('success', `Exported ${listToExport.length} purchase order${listToExport.length > 1 ? 's' : ''} to CSV.`);
   };
 
   const filteredPOs = statusFilter === 'ALL'
@@ -127,6 +184,8 @@ export default function ProcurementView() {
               onSelect={setSelectedPO}
               onStatusUpdate={handleStatusUpdate}
               onCreateNew={() => setShowCreatePO(true)}
+              onViewPdf={setViewingPdfPO}
+              onExportCsv={() => handleExportPOCsv()}
             />
           )}
           {activeSubTab === 'grn' && (
@@ -159,7 +218,29 @@ export default function ProcurementView() {
           po={selectedPO}
           onClose={() => setSelectedPO(null)}
           onStatusUpdate={handleStatusUpdate}
+          onViewPdf={setViewingPdfPO}
         />
+      )}
+
+      {/* Official PO PDF / Print Modal */}
+      {viewingPdfPO && (
+        <PurchaseOrderPDFModal
+          po={viewingPdfPO}
+          onClose={() => setViewingPdfPO(null)}
+          onExportCsv={() => handleExportPOCsv(viewingPdfPO)}
+        />
+      )}
+
+      {/* Notification Toast */}
+      {notification && (
+        <div className={`fixed bottom-5 right-5 z-[200] px-4 py-3 rounded-lg shadow-xl border flex items-center space-x-2 text-xs font-bold no-print ${
+          notification.type === 'success'
+            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+            : 'bg-red-50 text-red-800 border-red-200'
+        }`}>
+          <CheckCircle className="w-4 h-4 text-emerald-600" />
+          <span>{notification.msg}</span>
+        </div>
       )}
     </div>
   );
@@ -263,24 +344,34 @@ function ProcurementDashboard({ summary, onNavigate }) {
 
 // ═══════════ PURCHASE ORDER LIST ═══════════
 
-function PurchaseOrderList({ orders, statusFilter, onFilterChange, onSelect, onStatusUpdate, onCreateNew }) {
+function PurchaseOrderList({ orders, statusFilter, onFilterChange, onSelect, onStatusUpdate, onCreateNew, onViewPdf, onExportCsv }) {
   const statusOptions = ['ALL', 'DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'SENT', 'PARTIALLY_RECEIVED', 'FULLY_RECEIVED', 'CLOSED', 'CANCELLED'];
 
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h2 className="text-lg font-bold text-slate-800">Purchase Orders</h2>
           <p className="text-xs text-slate-500 mt-0.5">{orders.length} purchase orders</p>
         </div>
-        <button
-          onClick={onCreateNew}
-          className="flex items-center space-x-2 px-4 py-2.5 bg-[#1E40AF] text-white rounded-lg text-xs font-bold hover:bg-blue-800 transition shadow-sm"
-        >
-          <Plus className="w-4 h-4" />
-          <span>NEW PURCHASE ORDER</span>
-        </button>
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={onExportCsv}
+            className="flex items-center space-x-1.5 px-3.5 py-2.5 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold transition shadow-sm"
+            title="Export Purchase Orders to CSV"
+          >
+            <Download className="w-4 h-4 text-slate-500" />
+            <span>EXPORT CSV</span>
+          </button>
+          <button
+            onClick={onCreateNew}
+            className="flex items-center space-x-2 px-4 py-2.5 bg-[#1E40AF] text-white rounded-lg text-xs font-bold hover:bg-blue-800 transition shadow-sm"
+          >
+            <Plus className="w-4 h-4" />
+            <span>NEW PURCHASE ORDER</span>
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -515,6 +606,16 @@ function PurchaseOrderList({ orders, statusFilter, onFilterChange, onSelect, onS
                     >
                       <Eye className="w-3.5 h-3.5" />
                     </button>
+                    {onViewPdf && (
+                      <button
+                        onClick={() => onViewPdf(po)}
+                        className="text-[10px] font-bold text-[#1E40AF] hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded transition flex items-center space-x-1"
+                        title="View & Download PDF"
+                      >
+                        <Printer className="w-3.5 h-3.5" />
+                        <span>PDF</span>
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>
@@ -932,7 +1033,7 @@ function CreateGRNModal({ purchaseOrders, onClose, onSubmit }) {
 
 // ═══════════ PO DETAIL DRAWER ═══════════
 
-function PODetailDrawer({ po, onClose, onStatusUpdate }) {
+function PODetailDrawer({ po, onClose, onStatusUpdate, onViewPdf }) {
   return (
     <div className="fixed inset-0 bg-black/30 z-[100] flex justify-end">
       <div className="w-full max-w-lg bg-white shadow-2xl h-full overflow-y-auto">
@@ -943,7 +1044,19 @@ function PODetailDrawer({ po, onClose, onStatusUpdate }) {
               {po.status?.replace(/_/g, ' ')}
             </span>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-lg font-bold">✕</button>
+          <div className="flex items-center space-x-2">
+            {onViewPdf && (
+              <button
+                onClick={() => onViewPdf(po)}
+                className="flex items-center space-x-1.5 px-3 py-1.5 bg-[#1E40AF] hover:bg-blue-800 text-white rounded-lg text-xs font-bold transition shadow-sm"
+                title="View & Print Official PDF"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span>Official PDF</span>
+              </button>
+            )}
+            <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-lg font-bold">✕</button>
+          </div>
         </div>
 
         <div className="p-6 space-y-5">
@@ -1163,6 +1276,243 @@ function PODetailDrawer({ po, onClose, onStatusUpdate }) {
                 <span className="text-xs text-slate-400 italic">This purchase order is completed and closed.</span>
               )}
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+// ═══════════════════════════════════════════════════════════
+// OFFICIAL PURCHASE ORDER PDF MODAL
+// ═══════════════════════════════════════════════════════════
+
+function PurchaseOrderPDFModal({ po, onClose, onExportCsv }) {
+  if (!po) return null;
+
+  return (
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[150] flex items-center justify-center p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-4xl w-full max-h-[92vh] flex flex-col overflow-hidden">
+        {/* Modal Top Bar (no-print) */}
+        <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50 no-print">
+          <div className="flex items-center space-x-2.5">
+            <div className="p-2 bg-[#1E40AF] text-white rounded-lg">
+              <FileText className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-slate-900">Official Purchase Order &amp; Procurement Document</h2>
+              <p className="text-[11px] text-slate-500 font-medium">Verified commercial agreement for agricultural commodities</p>
+            </div>
+          </div>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => onExportCsv && onExportCsv(po)}
+              className="px-3.5 py-1.5 border border-slate-300 hover:bg-slate-100 text-slate-700 text-xs font-bold rounded-lg flex items-center space-x-1.5 transition"
+              title="Download CSV for this PO"
+            >
+              <Download className="w-3.5 h-3.5 text-slate-500" />
+              <span>Export CSV</span>
+            </button>
+            <button
+              onClick={() => window.print()}
+              className="px-4 py-1.5 bg-[#1E40AF] hover:bg-blue-800 text-white text-xs font-bold rounded-lg shadow-sm flex items-center space-x-1.5 transition"
+            >
+              <Printer className="w-3.5 h-3.5" />
+              <span>Print / Save as PDF</span>
+            </button>
+            <button onClick={onClose} className="p-1.5 hover:bg-slate-200 rounded-lg text-slate-500 transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Printable Document Body */}
+        <div className="p-8 overflow-y-auto flex-1 font-sans bg-white print-document">
+          {/* Header */}
+          <div className="flex items-start justify-between border-b-2 border-[#1E40AF] pb-5">
+            <div>
+              <div className="flex items-center space-x-2">
+                <span className="text-2xl font-black tracking-tight text-[#1E40AF]">SOILEX</span>
+                <span className="text-xs font-bold text-[#D97706] tracking-widest uppercase mt-1">LIFE SCIENCE LTD</span>
+              </div>
+              <p className="text-[11px] text-slate-500 font-medium mt-0.5">Agricultural Commodities, Spices, Extracts &amp; Global Trade</p>
+              <div className="text-[10px] text-slate-400 mt-2 space-y-0.5">
+                <p>Hanoi HQ: Charmvit Tower, 117 Tran Duy Hung, Cau Giay, Hanoi, Vietnam</p>
+                <p>Maritime Logistics: Dinh Vu Industrial Logistics Hub, Hai An, Haiphong</p>
+                <p>Tax / VAT Reg: <strong>VN-0108928374</strong> • Tel: +84 (24) 3782-9900 • Web: www.soilex.vn</p>
+              </div>
+            </div>
+
+            <div className="text-right">
+              <span className="inline-block px-3 py-1 bg-[#1E40AF] text-white text-xs font-black uppercase tracking-wider rounded">
+                PURCHASE ORDER
+              </span>
+              <p className="text-base font-black text-slate-800 font-mono mt-2">{po.po_number}</p>
+              <p className="text-[11px] text-slate-500 mt-0.5">Order Date: <span className="font-semibold text-slate-700">{po.order_date}</span></p>
+              <span className={`inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded ${STATUS_COLORS[po.status] || 'bg-slate-100'}`}>
+                STATUS: {po.status?.replace(/_/g, ' ')}
+              </span>
+            </div>
+          </div>
+
+          {/* Supplier & Delivery Info Grid */}
+          <div className="grid grid-cols-2 gap-6 my-6 text-xs">
+            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-[#1E40AF] mb-2">VENDOR / SUPPLIER DETAILS</p>
+              <p className="text-sm font-bold text-slate-800">{po.supplier_name}</p>
+              <div className="text-[11px] text-slate-600 mt-2 space-y-1">
+                <p><span className="text-slate-400">Payment Terms:</span> <strong>{po.payment_terms || 'Net 30'}</strong></p>
+                <p><span className="text-slate-400">Currency:</span> <strong>{po.currency || 'USD'}</strong></p>
+                <p><span className="text-slate-400">Order Reference:</span> <span className="font-mono">{po.id}</span></p>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-[#1E40AF] mb-2">DELIVERY &amp; LOGISTICS INSTRUCTIONS</p>
+              <div className="text-[11px] text-slate-600 space-y-1">
+                <p><span className="text-slate-400">Receiving Warehouse:</span> <strong>{po.delivery_warehouse || 'Haiphong Port Warehouse'}</strong></p>
+                <p><span className="text-slate-400">Expected Delivery:</span> <strong>{po.expected_delivery_date || 'Prompt / As per schedule'}</strong></p>
+                <p><span className="text-slate-400">Incoterms:</span> <strong>{po.incoterms} {po.incoterms_location || ''}</strong></p>
+                <p><span className="text-slate-400">Approval Signoff:</span> <strong>{po.approval_status || 'APPROVED'}</strong> {po.approved_by ? `(by ${po.approved_by})` : ''}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Line Items Table */}
+          <div className="border border-slate-200 rounded-xl overflow-hidden mb-6">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="bg-slate-100 text-slate-600 border-b border-slate-200 text-[10px] font-bold uppercase tracking-wider">
+                  <th className="py-2.5 px-3 text-left w-10">#</th>
+                  <th className="py-2.5 px-3 text-left">Item Description / Commodity Grade</th>
+                  <th className="py-2.5 px-3 text-right">Quantity</th>
+                  <th className="py-2.5 px-3 text-center">UOM</th>
+                  <th className="py-2.5 px-3 text-right">Unit Rate ({po.currency || 'USD'})</th>
+                  <th className="py-2.5 px-3 text-right">Disc %</th>
+                  <th className="py-2.5 px-3 text-right">Total Amount</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {(po.items && po.items.length > 0 ? po.items : [{
+                  item_name: 'Commodity Consignment Lot',
+                  quantity: 1,
+                  uom: 'Lot',
+                  rate: po.subtotal || po.grand_total,
+                  discount_percent: 0,
+                  amount: po.subtotal || po.grand_total
+                }]).map((item, idx) => {
+                  const lineAmt = item.amount || (item.quantity * item.rate * (1 - (item.discount_percent || 0) / 100));
+                  return (
+                    <tr key={idx} className="hover:bg-slate-50/50">
+                      <td className="py-2.5 px-3 text-slate-400 font-mono text-[11px]">{idx + 1}</td>
+                      <td className="py-2.5 px-3">
+                        <p className="font-bold text-slate-800">{item.item_name}</p>
+                        {item.quality_grade && <p className="text-[10px] text-slate-400">Grade: {item.quality_grade}</p>}
+                      </td>
+                      <td className="py-2.5 px-3 text-right font-semibold text-slate-700">{item.quantity}</td>
+                      <td className="py-2.5 px-3 text-center font-medium text-slate-500">{item.uom}</td>
+                      <td className="py-2.5 px-3 text-right text-slate-700 font-mono">${(item.rate || 0).toLocaleString()}</td>
+                      <td className="py-2.5 px-3 text-right text-slate-500">{item.discount_percent ? `${item.discount_percent}%` : '—'}</td>
+                      <td className="py-2.5 px-3 text-right font-bold text-slate-900 font-mono">${lineAmt.toLocaleString()}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Totals & Notes */}
+          <div className="grid grid-cols-2 gap-6 items-start mb-8 text-xs">
+            <div className="space-y-3">
+              <div className="bg-amber-50/70 border border-amber-200 rounded-xl p-3 text-[11px] text-amber-900 leading-relaxed">
+                <p className="font-bold mb-1 text-[10px] uppercase tracking-wider text-amber-800">Commercial &amp; Quality Mandate</p>
+                <ul className="list-disc pl-4 space-y-0.5 text-[10px] text-amber-800">
+                  <li>Goods must strictly adhere to contractual export specifications (ASTA / FAO standards).</li>
+                  <li>Original Certificate of Analysis (COA) &amp; Phytosanitary certificate required at arrival.</li>
+                  <li>Final acceptance subject to QA sampling and Goods Receipt Note (GRN) signoff.</li>
+                </ul>
+              </div>
+
+              {po.remarks && (
+                <div className="text-[11px] text-slate-500">
+                  <span className="font-bold text-slate-700">Remarks: </span>{po.remarks}
+                </div>
+              )}
+            </div>
+
+            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 space-y-2">
+              <div className="flex justify-between text-slate-600">
+                <span>Subtotal ({po.currency || 'USD'}):</span>
+                <span className="font-semibold font-mono">${(po.subtotal || 0).toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-slate-600">
+                <span>Tax / Duty Amount:</span>
+                <span className="font-semibold font-mono">${(po.tax_amount || 0).toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-slate-600">
+                <span>Freight &amp; Handling:</span>
+                <span className="font-semibold font-mono">${(po.shipping_charges || 0).toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-base font-black text-[#1E40AF] border-t border-slate-200 pt-2 mt-2">
+                <span>Net Purchase Total:</span>
+                <span className="font-mono">${(po.grand_total || 0).toLocaleString()}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Signatures & Seal Block */}
+          <div className="pt-6 border-t border-slate-200 flex items-end justify-between text-xs">
+            <div className="space-y-1">
+              <div className="w-36 h-12 border-b border-slate-400 mb-1 flex items-center justify-center italic text-slate-400 text-[10px]">
+                [Digital Authorization]
+              </div>
+              <p className="font-bold text-slate-800">Nguyen Van Binh</p>
+              <p className="text-slate-500 text-[11px]">Head of Global Procurement</p>
+              <p className="text-slate-400 text-[10px]">SOILEX Life Science Ltd</p>
+            </div>
+
+            {/* Corporate Seal Emblem */}
+            <div className="w-24 h-24 rounded-full border-2 border-dashed border-[#1E40AF]/40 flex flex-col items-center justify-center p-1 text-center text-[#1E40AF] select-none">
+              <Building2 className="w-5 h-5 text-[#1E40AF]/60" />
+              <span className="text-[7px] font-black uppercase mt-0.5 tracking-tighter">SOILEX SEAL</span>
+              <span className="text-[6px] font-semibold text-slate-400">PROCUREMENT</span>
+            </div>
+
+            <div className="space-y-1 text-right">
+              <div className="w-36 h-12 border-b border-slate-400 mb-1 ml-auto flex items-center justify-center italic text-slate-400 text-[10px]">
+                [Authorized Approval]
+              </div>
+              <p className="font-bold text-slate-800">Dr. Nguyen Minh Triet</p>
+              <p className="text-slate-500 text-[11px]">Executive Vice President</p>
+              <p className="text-slate-400 text-[10px]">Supply Chain &amp; Corporate Affairs</p>
+            </div>
+          </div>
+
+          <div className="text-center text-[9px] text-slate-400 border-t border-slate-100 pt-3 mt-6">
+            Generated via SOILEX Life Science Enterprise ERP • Document Hash: {po.id}-SLX-SECURE-VERIFIED
+          </div>
+        </div>
+
+        {/* Modal Footer (no-print) */}
+        <div className="p-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between no-print">
+          <span className="text-xs text-slate-500">
+            Click <strong>Print / Save as PDF</strong> to generate high-resolution A4 document or print to PDF.
+          </span>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 hover:bg-white"
+            >
+              Close
+            </button>
+            <button
+              onClick={() => window.print()}
+              className="px-5 py-2 bg-[#1E40AF] hover:bg-blue-800 text-white rounded-lg text-xs font-bold shadow flex items-center space-x-1.5 transition"
+            >
+              <Printer className="w-4 h-4" />
+              <span>Print / Save as PDF</span>
+            </button>
           </div>
         </div>
       </div>

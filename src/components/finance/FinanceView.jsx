@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import {
   DollarSign, FileText, BookOpen, CreditCard, CheckCircle, Clock,
   Plus, Search, Filter, ChevronRight, Eye, Send, ArrowUpRight, ArrowDownLeft,
-  BarChart2, Receipt, Building2, TrendingUp, AlertCircle, PieChart, Layers
+  BarChart2, Receipt, Building2, TrendingUp, AlertCircle, PieChart, Layers,
+  Download, Printer, X
 } from 'lucide-react';
 import api from '../../services/api';
 
@@ -44,6 +45,14 @@ export default function FinanceView() {
   const [showRecordPayment, setShowRecordPayment] = useState(false);
   const [showAddAccount, setShowAddAccount] = useState(false);
   const [selectedSO, setSelectedSO] = useState(null);
+  const [viewingPdfSO, setViewingPdfSO] = useState(null);
+  const [viewingPdfInvoice, setViewingPdfInvoice] = useState(null);
+  const [notification, setNotification] = useState(null);
+
+  const notify = (type, msg) => {
+    setNotification({ type, msg });
+    setTimeout(() => setNotification(null), 3500);
+  };
 
   useEffect(() => {
     loadData();
@@ -72,6 +81,7 @@ export default function FinanceView() {
     const res = await api.createSalesOrder(formData);
     if (res) {
       setShowCreateSO(false);
+      notify('success', 'Sales Order created successfully.');
       loadData();
     }
   };
@@ -82,6 +92,7 @@ export default function FinanceView() {
       if (selectedSO && selectedSO.id === soId) {
         setSelectedSO(prev => (prev ? { ...prev, status: newStatus } : null));
       }
+      notify('success', `Sales Order status updated to ${newStatus.replace(/_/g, ' ')}.`);
       loadData();
     }
   };
@@ -90,6 +101,7 @@ export default function FinanceView() {
     const res = await api.createInvoice(formData);
     if (res) {
       setShowCreateInvoice(false);
+      notify('success', 'Commercial Invoice generated successfully.');
       loadData();
     }
   };
@@ -98,6 +110,7 @@ export default function FinanceView() {
     const res = await api.createPayment(formData);
     if (res) {
       setShowRecordPayment(false);
+      notify('success', 'Payment entry posted successfully.');
       loadData();
     }
   };
@@ -106,8 +119,98 @@ export default function FinanceView() {
     const res = await api.createAccount(formData);
     if (res) {
       setShowAddAccount(false);
+      notify('success', 'Account added to Chart of Accounts.');
       loadData();
     }
+  };
+
+  const handleExportSOCsv = (singleSO = null) => {
+    const listToExport = singleSO ? [singleSO] : salesOrders;
+    if (!listToExport || listToExport.length === 0) {
+      notify('error', 'No sales orders to export.');
+      return;
+    }
+    const headers = [
+      'SO Number', 'Customer Name', 'Customer PO Ref', 'Order Date', 'Delivery Date',
+      'Currency', 'Payment Terms', 'Incoterms', 'Incoterms Location', 'Salesperson',
+      'Territory', 'Subtotal', 'Tax Amount', 'Shipping Charges', 'Grand Total',
+      'Paid Amount', 'Outstanding Balance', 'Status', 'Items Count'
+    ];
+    const rows = listToExport.map(so => [
+      `"${so.so_number || ''}"`,
+      `"${(so.customer_name || '').replace(/"/g, '""')}"`,
+      `"${so.customer_po_number || ''}"`,
+      so.order_date || '',
+      so.delivery_date || '',
+      so.currency || 'USD',
+      `"${so.payment_terms || ''}"`,
+      so.incoterms || '',
+      `"${so.incoterms_location || ''}"`,
+      `"${so.salesperson || ''}"`,
+      `"${so.territory || ''}"`,
+      so.subtotal || 0,
+      so.tax_amount || 0,
+      so.shipping_charges || 0,
+      so.grand_total || 0,
+      so.paid_amount || 0,
+      so.outstanding_amount || 0,
+      so.status || '',
+      so.items ? so.items.length : 0
+    ]);
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = singleSO
+      ? `soilex_so_${singleSO.so_number || singleSO.id}_${new Date().toISOString().slice(0, 10)}.csv`
+      : `soilex_sales_orders_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    notify('success', `Exported ${listToExport.length} sales order${listToExport.length > 1 ? 's' : ''} to CSV.`);
+  };
+
+  const handleExportInvoiceCsv = (singleInvoice = null) => {
+    const listToExport = singleInvoice ? [singleInvoice] : invoices;
+    if (!listToExport || listToExport.length === 0) {
+      notify('error', 'No invoices to export.');
+      return;
+    }
+    const headers = [
+      'Invoice Number', 'SO Ref', 'Customer Name', 'Invoice Date', 'Due Date',
+      'Payment Terms', 'Subtotal', 'Tax Amount', 'Grand Total', 'Paid Amount',
+      'Outstanding Amount', 'Status', 'Remarks'
+    ];
+    const rows = listToExport.map(inv => [
+      `"${inv.invoice_number || ''}"`,
+      `"${inv.so_number || ''}"`,
+      `"${(inv.customer_name || '').replace(/"/g, '""')}"`,
+      inv.invoice_date || '',
+      inv.due_date || '',
+      `"${inv.payment_terms || ''}"`,
+      inv.subtotal || inv.grand_total || 0,
+      inv.tax_amount || 0,
+      inv.grand_total || 0,
+      inv.paid_amount || 0,
+      inv.outstanding_amount || 0,
+      inv.status || '',
+      `"${(inv.remarks || '').replace(/"/g, '""')}"`
+    ]);
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = singleInvoice
+      ? `soilex_invoice_${singleInvoice.invoice_number || singleInvoice.id}_${new Date().toISOString().slice(0, 10)}.csv`
+      : `soilex_sales_invoices_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    notify('success', `Exported ${listToExport.length} invoice${listToExport.length > 1 ? 's' : ''} to CSV.`);
   };
 
   const subTabs = [
@@ -162,6 +265,8 @@ export default function FinanceView() {
               onSelect={setSelectedSO}
               onStatusUpdate={handleStatusUpdate}
               onCreateNew={() => setShowCreateSO(true)}
+              onViewPdf={setViewingPdfSO}
+              onExportCsv={() => handleExportSOCsv()}
             />
           )}
 
@@ -170,6 +275,8 @@ export default function FinanceView() {
               invoices={invoices}
               salesOrders={salesOrders}
               onCreateNew={() => setShowCreateInvoice(true)}
+              onViewPdf={setViewingPdfInvoice}
+              onExportCsv={() => handleExportInvoiceCsv()}
             />
           )}
 
@@ -225,7 +332,38 @@ export default function FinanceView() {
           so={selectedSO}
           onClose={() => setSelectedSO(null)}
           onStatusUpdate={handleStatusUpdate}
+          onViewPdf={setViewingPdfSO}
         />
+      )}
+
+      {/* Official Sales Order PDF / Print Modal */}
+      {viewingPdfSO && (
+        <SalesOrderPDFModal
+          so={viewingPdfSO}
+          onClose={() => setViewingPdfSO(null)}
+          onExportCsv={() => handleExportSOCsv(viewingPdfSO)}
+        />
+      )}
+
+      {/* Official Sales Invoice PDF / Print Modal */}
+      {viewingPdfInvoice && (
+        <SalesInvoicePDFModal
+          invoice={viewingPdfInvoice}
+          onClose={() => setViewingPdfInvoice(null)}
+          onExportCsv={() => handleExportInvoiceCsv(viewingPdfInvoice)}
+        />
+      )}
+
+      {/* Notification Toast */}
+      {notification && (
+        <div className={`fixed bottom-5 right-5 z-[200] px-4 py-3 rounded-lg shadow-xl border flex items-center space-x-2 text-xs font-bold no-print ${
+          notification.type === 'success'
+            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+            : 'bg-red-50 text-red-800 border-red-200'
+        }`}>
+          <CheckCircle className="w-4 h-4 text-emerald-600" />
+          <span>{notification.msg}</span>
+        </div>
       )}
     </div>
   );
@@ -343,7 +481,7 @@ function FinanceDashboard({ summary, accounts, invoices, onNavigate }) {
 // 2. SALES ORDERS LIST & LIFECYCLE
 // ═══════════════════════════════════════════════════════════
 
-function SalesOrderList({ orders, onSelect, onStatusUpdate, onCreateNew }) {
+function SalesOrderList({ orders, onSelect, onStatusUpdate, onCreateNew, onViewPdf, onExportCsv }) {
   const [filter, setFilter] = useState('ALL');
   const statuses = ['ALL', 'DRAFT', 'CONFIRMED', 'PARTIALLY_DELIVERED', 'FULLY_DELIVERED', 'INVOICED', 'PARTIALLY_PAID', 'PAID', 'CLOSED', 'CANCELLED'];
 
@@ -356,13 +494,23 @@ function SalesOrderList({ orders, onSelect, onStatusUpdate, onCreateNew }) {
           <h2 className="text-lg font-bold text-slate-800">Sales Orders</h2>
           <p className="text-xs text-slate-500 mt-0.5">{orders.length} commercial sales orders</p>
         </div>
-        <button
-          onClick={onCreateNew}
-          className="flex items-center space-x-2 px-4 py-2.5 bg-[#1E40AF] text-white rounded-lg text-xs font-bold hover:bg-blue-800 transition shadow-sm"
-        >
-          <Plus className="w-4 h-4" />
-          <span>NEW SALES ORDER</span>
-        </button>
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={onExportCsv}
+            className="flex items-center space-x-1.5 px-3.5 py-2.5 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold transition shadow-sm"
+            title="Export Sales Orders to CSV"
+          >
+            <Download className="w-4 h-4 text-slate-500" />
+            <span>EXPORT CSV</span>
+          </button>
+          <button
+            onClick={onCreateNew}
+            className="flex items-center space-x-2 px-4 py-2.5 bg-[#1E40AF] text-white rounded-lg text-xs font-bold hover:bg-blue-800 transition shadow-sm"
+          >
+            <Plus className="w-4 h-4" />
+            <span>NEW SALES ORDER</span>
+          </button>
+        </div>
       </div>
 
       {/* Filter Tabs */}
@@ -546,6 +694,16 @@ function SalesOrderList({ orders, onSelect, onStatusUpdate, onCreateNew }) {
                     >
                       <Eye className="w-3.5 h-3.5" />
                     </button>
+                    {onViewPdf && (
+                      <button
+                        onClick={() => onViewPdf(so)}
+                        className="text-[10px] font-bold text-[#1E40AF] hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded transition flex items-center space-x-1"
+                        title="View & Download PDF"
+                      >
+                        <Printer className="w-3.5 h-3.5" />
+                        <span>PDF</span>
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>
@@ -567,28 +725,38 @@ function SalesOrderList({ orders, onSelect, onStatusUpdate, onCreateNew }) {
 // 3. INVOICE & ACCOUNTS RECEIVABLE
 // ═══════════════════════════════════════════════════════════
 
-function InvoiceList({ invoices, salesOrders, onCreateNew }) {
+function InvoiceList({ invoices, salesOrders, onCreateNew, onViewPdf, onExportCsv }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h2 className="text-lg font-bold text-slate-800">Sales Invoices & Billing</h2>
+          <h2 className="text-lg font-bold text-slate-800">Sales Invoices &amp; Billing</h2>
           <p className="text-xs text-slate-500 mt-0.5">{invoices.length} invoices generated</p>
         </div>
-        <button
-          onClick={onCreateNew}
-          className="flex items-center space-x-2 px-4 py-2.5 bg-[#1E40AF] text-white rounded-lg text-xs font-bold hover:bg-blue-800 transition shadow-sm"
-        >
-          <Plus className="w-4 h-4" />
-          <span>GENERATE INVOICE</span>
-        </button>
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={onExportCsv}
+            className="flex items-center space-x-1.5 px-3.5 py-2.5 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold transition shadow-sm"
+            title="Export Invoices to CSV"
+          >
+            <Download className="w-4 h-4 text-slate-500" />
+            <span>EXPORT CSV</span>
+          </button>
+          <button
+            onClick={onCreateNew}
+            className="flex items-center space-x-2 px-4 py-2.5 bg-[#1E40AF] text-white rounded-lg text-xs font-bold hover:bg-blue-800 transition shadow-sm"
+          >
+            <Plus className="w-4 h-4" />
+            <span>GENERATE INVOICE</span>
+          </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <table className="w-full">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-200">
-              {['Invoice Number', 'SO Ref', 'Customer', 'Date', 'Due Date', 'Total', 'Paid', 'Balance Due', 'Status'].map(h => (
+              {['Invoice Number', 'SO Ref', 'Customer', 'Date', 'Due Date', 'Total', 'Paid', 'Balance Due', 'Status', 'Actions'].map(h => (
                 <th key={h} className="text-left px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">{h}</th>
               ))}
             </tr>
@@ -609,11 +777,23 @@ function InvoiceList({ invoices, salesOrders, onCreateNew }) {
                     {inv.status}
                   </span>
                 </td>
+                <td className="px-4 py-3">
+                  {onViewPdf && (
+                    <button
+                      onClick={() => onViewPdf(inv)}
+                      className="text-[10px] font-bold text-[#1E40AF] hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded transition flex items-center space-x-1"
+                      title="View & Download PDF"
+                    >
+                      <Printer className="w-3.5 h-3.5" />
+                      <span>PDF</span>
+                    </button>
+                  )}
+                </td>
               </tr>
             ))}
             {invoices.length === 0 && (
               <tr>
-                <td colSpan={9} className="px-4 py-12 text-center text-sm text-slate-400">No invoices found</td>
+                <td colSpan={10} className="px-4 py-12 text-center text-sm text-slate-400">No invoices found</td>
               </tr>
             )}
           </tbody>
@@ -1230,7 +1410,7 @@ function AddAccountModal({ accounts, onClose, onSubmit }) {
 }
 
 
-function SODetailDrawer({ so, onClose, onStatusUpdate }) {
+function SODetailDrawer({ so, onClose, onStatusUpdate, onViewPdf }) {
   return (
     <div className="fixed inset-0 bg-black/30 z-[100] flex justify-end">
       <div className="w-full max-w-lg bg-white shadow-2xl h-full overflow-y-auto">
@@ -1241,7 +1421,19 @@ function SODetailDrawer({ so, onClose, onStatusUpdate }) {
               {so.status?.replace(/_/g, ' ')}
             </span>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-lg font-bold">✕</button>
+          <div className="flex items-center space-x-2">
+            {onViewPdf && (
+              <button
+                onClick={() => onViewPdf(so)}
+                className="flex items-center space-x-1.5 px-3 py-1.5 bg-[#1E40AF] hover:bg-blue-800 text-white rounded-lg text-xs font-bold transition shadow-sm"
+                title="View & Download PDF"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span>Official PDF</span>
+              </button>
+            )}
+            <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-lg font-bold">✕</button>
+          </div>
         </div>
 
         <div className="p-6 space-y-5">
@@ -1429,6 +1621,484 @@ function SODetailDrawer({ so, onClose, onStatusUpdate }) {
                 <span className="text-xs text-slate-400 italic">This sales order is completed and closed.</span>
               )}
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+// ═══════════════════════════════════════════════════════════
+// OFFICIAL SALES ORDER PDF MODAL
+// ═══════════════════════════════════════════════════════════
+
+function SalesOrderPDFModal({ so, onClose, onExportCsv }) {
+  if (!so) return null;
+
+  return (
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[150] flex items-center justify-center p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-4xl w-full max-h-[92vh] flex flex-col overflow-hidden">
+        {/* Modal Top Bar (no-print) */}
+        <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50 no-print">
+          <div className="flex items-center space-x-2.5">
+            <div className="p-2 bg-[#1E40AF] text-white rounded-lg">
+              <FileText className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-slate-900">Commercial Sales Order &amp; Export Contract</h2>
+              <p className="text-[11px] text-slate-500 font-medium">Official trade confirmation for international delivery</p>
+            </div>
+          </div>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => onExportCsv && onExportCsv(so)}
+              className="px-3.5 py-1.5 border border-slate-300 hover:bg-slate-100 text-slate-700 text-xs font-bold rounded-lg flex items-center space-x-1.5 transition"
+              title="Download CSV for this Sales Order"
+            >
+              <Download className="w-3.5 h-3.5 text-slate-500" />
+              <span>Export CSV</span>
+            </button>
+            <button
+              onClick={() => window.print()}
+              className="px-4 py-1.5 bg-[#1E40AF] hover:bg-blue-800 text-white text-xs font-bold rounded-lg shadow-sm flex items-center space-x-1.5 transition"
+            >
+              <Printer className="w-3.5 h-3.5" />
+              <span>Print / Save as PDF</span>
+            </button>
+            <button onClick={onClose} className="p-1.5 hover:bg-slate-200 rounded-lg text-slate-500 transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Printable Document Body */}
+        <div className="p-8 overflow-y-auto flex-1 font-sans bg-white print-document">
+          {/* Header */}
+          <div className="flex items-start justify-between border-b-2 border-[#1E40AF] pb-5">
+            <div>
+              <div className="flex items-center space-x-2">
+                <span className="text-2xl font-black tracking-tight text-[#1E40AF]">SOILEX</span>
+                <span className="text-xs font-bold text-[#D97706] tracking-widest uppercase mt-1">LIFE SCIENCE LTD</span>
+              </div>
+              <p className="text-[11px] text-slate-500 font-medium mt-0.5">Agricultural Commodities, Spices, Extracts &amp; Global Trade</p>
+              <div className="text-[10px] text-slate-400 mt-2 space-y-0.5">
+                <p>Hanoi HQ: Charmvit Tower, 117 Tran Duy Hung, Cau Giay, Hanoi, Vietnam</p>
+                <p>Export Terminal: Dinh Vu Industrial Logistics Hub, Hai An, Haiphong</p>
+                <p>Tax / VAT Reg: <strong>VN-0108928374</strong> • Tel: +84 (24) 3782-9900 • Web: www.soilex.vn</p>
+              </div>
+            </div>
+
+            <div className="text-right">
+              <span className="inline-block px-3 py-1 bg-[#1E40AF] text-white text-xs font-black uppercase tracking-wider rounded">
+                SALES ORDER
+              </span>
+              <p className="text-base font-black text-slate-800 font-mono mt-2">{so.so_number}</p>
+              <p className="text-[11px] text-slate-500 mt-0.5">Order Date: <span className="font-semibold text-slate-700">{so.order_date}</span></p>
+              <span className={`inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded ${STATUS_COLORS[so.status] || 'bg-slate-100'}`}>
+                STATUS: {so.status?.replace(/_/g, ' ')}
+              </span>
+            </div>
+          </div>
+
+          {/* Customer & Contract Info Grid */}
+          <div className="grid grid-cols-2 gap-6 my-6 text-xs">
+            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-[#1E40AF] mb-2">BUYER / CLIENT INFORMATION</p>
+              <p className="text-sm font-bold text-slate-800">{so.customer_name}</p>
+              <div className="text-[11px] text-slate-600 mt-2 space-y-1">
+                <p><span className="text-slate-400">Customer PO Ref:</span> <strong>{so.customer_po_number || 'Direct Contract'}</strong></p>
+                <p><span className="text-slate-400">Territory / Destination:</span> <strong>{so.territory || 'International'}</strong></p>
+                <p><span className="text-slate-400">Sales Executive:</span> <strong>{so.salesperson || 'Vũ Thị Hoan'}</strong></p>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-[#1E40AF] mb-2">COMMERCIAL &amp; SHIPPING TERMS</p>
+              <div className="text-[11px] text-slate-600 space-y-1">
+                <p><span className="text-slate-400">Incoterms 2020:</span> <strong>{so.incoterms} {so.incoterms_location || ''}</strong></p>
+                <p><span className="text-slate-400">Payment Terms:</span> <strong>{so.payment_terms || 'LC at Sight'}</strong></p>
+                <p><span className="text-slate-400">Target Delivery Date:</span> <strong>{so.delivery_date || 'As scheduled'}</strong></p>
+                <p><span className="text-slate-400">Settlement Currency:</span> <strong>{so.currency || 'USD'}</strong></p>
+              </div>
+            </div>
+          </div>
+
+          {/* Line Items Table */}
+          <div className="border border-slate-200 rounded-xl overflow-hidden mb-6">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="bg-slate-100 text-slate-600 border-b border-slate-200 text-[10px] font-bold uppercase tracking-wider">
+                  <th className="py-2.5 px-3 text-left w-10">#</th>
+                  <th className="py-2.5 px-3 text-left">Commodity / Product Grade</th>
+                  <th className="py-2.5 px-3 text-right">Quantity</th>
+                  <th className="py-2.5 px-3 text-center">UOM</th>
+                  <th className="py-2.5 px-3 text-right">Unit Rate ({so.currency || 'USD'})</th>
+                  <th className="py-2.5 px-3 text-right">Disc %</th>
+                  <th className="py-2.5 px-3 text-right">Total Amount</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {(so.items && so.items.length > 0 ? so.items : [{
+                  item_name: 'Standard Commodity Consignment',
+                  quantity: 1,
+                  uom: 'Lot',
+                  rate: so.subtotal || so.grand_total,
+                  discount_percent: 0,
+                  amount: so.subtotal || so.grand_total
+                }]).map((item, idx) => {
+                  const lineAmt = item.amount || (item.quantity * item.rate * (1 - (item.discount_percent || 0) / 100));
+                  return (
+                    <tr key={idx} className="hover:bg-slate-50/50">
+                      <td className="py-2.5 px-3 text-slate-400 font-mono text-[11px]">{idx + 1}</td>
+                      <td className="py-2.5 px-3">
+                        <p className="font-bold text-slate-800">{item.item_name}</p>
+                        {item.warehouse && <p className="text-[10px] text-slate-400">Origin Warehouse: {item.warehouse}</p>}
+                      </td>
+                      <td className="py-2.5 px-3 text-right font-semibold text-slate-700">{item.quantity}</td>
+                      <td className="py-2.5 px-3 text-center font-medium text-slate-500">{item.uom}</td>
+                      <td className="py-2.5 px-3 text-right text-slate-700 font-mono">${(item.rate || 0).toLocaleString()}</td>
+                      <td className="py-2.5 px-3 text-right text-slate-500">{item.discount_percent ? `${item.discount_percent}%` : '—'}</td>
+                      <td className="py-2.5 px-3 text-right font-bold text-slate-900 font-mono">${lineAmt.toLocaleString()}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Totals & Notes */}
+          <div className="grid grid-cols-2 gap-6 items-start mb-8 text-xs">
+            <div className="space-y-3">
+              <div className="bg-blue-50/70 border border-blue-200 rounded-xl p-3 text-[11px] text-blue-900 leading-relaxed">
+                <p className="font-bold mb-1 text-[10px] uppercase tracking-wider text-blue-800">Export Remittance &amp; Banking Details</p>
+                <div className="space-y-0.5 text-[10px] text-slate-700">
+                  <p><span className="text-slate-400">Beneficiary:</span> <strong>SOILEX Life Science Ltd</strong></p>
+                  <p><span className="text-slate-400">Bank:</span> <strong>ICICI / HDFC Forex Settlement Branch</strong></p>
+                  <p><span className="text-slate-400">SWIFT / BIC:</span> <strong className="font-mono">SLXVNVX</strong> • <span className="text-slate-400">Account:</span> <strong className="font-mono">0829-1100-2938-USD</strong></p>
+                </div>
+              </div>
+
+              {so.remarks && (
+                <div className="text-[11px] text-slate-500">
+                  <span className="font-bold text-slate-700">Contract Notes: </span>{so.remarks}
+                </div>
+              )}
+            </div>
+
+            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 space-y-2">
+              <div className="flex justify-between text-slate-600">
+                <span>Contract Subtotal:</span>
+                <span className="font-semibold font-mono">${(so.subtotal || 0).toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-slate-600">
+                <span>Shipping &amp; Ocean Freight:</span>
+                <span className="font-semibold font-mono">${(so.shipping_charges || 0).toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-base font-black text-[#1E40AF] border-t border-slate-200 pt-2 mt-2">
+                <span>Grand Total (USD):</span>
+                <span className="font-mono">${(so.grand_total || 0).toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-xs text-emerald-700 font-semibold border-t border-slate-100 pt-1">
+                <span>Realized Collections:</span>
+                <span className="font-mono">${(so.paid_amount || 0).toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-xs text-amber-600 font-bold">
+                <span>Outstanding Balance:</span>
+                <span className="font-mono">${(so.outstanding_amount || 0).toLocaleString()}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Signatures & Seal Block */}
+          <div className="pt-6 border-t border-slate-200 flex items-end justify-between text-xs">
+            <div className="space-y-1">
+              <div className="w-36 h-12 border-b border-slate-400 mb-1 flex items-center justify-center italic text-slate-400 text-[10px]">
+                [Authorized Signatory]
+              </div>
+              <p className="font-bold text-slate-800">Vu Thi Hoan</p>
+              <p className="text-slate-500 text-[11px]">Senior Commercial Director</p>
+              <p className="text-slate-400 text-[10px]">SOILEX Life Science Ltd</p>
+            </div>
+
+            {/* Corporate Seal Emblem */}
+            <div className="w-24 h-24 rounded-full border-2 border-dashed border-[#1E40AF]/40 flex flex-col items-center justify-center p-1 text-center text-[#1E40AF] select-none">
+              <Building2 className="w-5 h-5 text-[#1E40AF]/60" />
+              <span className="text-[7px] font-black uppercase mt-0.5 tracking-tighter">SOILEX SEAL</span>
+              <span className="text-[6px] font-semibold text-slate-400">COMMERCIAL</span>
+            </div>
+
+            <div className="space-y-1 text-right">
+              <div className="w-36 h-12 border-b border-slate-400 mb-1 ml-auto flex items-center justify-center italic text-slate-400 text-[10px]">
+                [Buyer Acceptance]
+              </div>
+              <p className="font-bold text-slate-800">{so.customer_name}</p>
+              <p className="text-slate-500 text-[11px]">Authorized Purchasing Representative</p>
+              <p className="text-slate-400 text-[10px]">Official Client Counterpart</p>
+            </div>
+          </div>
+
+          <div className="text-center text-[9px] text-slate-400 border-t border-slate-100 pt-3 mt-6">
+            Generated via SOILEX Life Science Enterprise ERP • Document Hash: {so.id}-COMM-EXPORT-VALIDATED
+          </div>
+        </div>
+
+        {/* Modal Footer (no-print) */}
+        <div className="p-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between no-print">
+          <span className="text-xs text-slate-500">
+            Click <strong>Print / Save as PDF</strong> to generate high-resolution A4 document or print to PDF.
+          </span>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 hover:bg-white"
+            >
+              Close
+            </button>
+            <button
+              onClick={() => window.print()}
+              className="px-5 py-2 bg-[#1E40AF] hover:bg-blue-800 text-white rounded-lg text-xs font-bold shadow flex items-center space-x-1.5 transition"
+            >
+              <Printer className="w-4 h-4" />
+              <span>Print / Save as PDF</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+// ═══════════════════════════════════════════════════════════
+// OFFICIAL COMMERCIAL TAX INVOICE PDF MODAL
+// ═══════════════════════════════════════════════════════════
+
+function SalesInvoicePDFModal({ invoice, onClose, onExportCsv }) {
+  if (!invoice) return null;
+
+  return (
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[150] flex items-center justify-center p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-4xl w-full max-h-[92vh] flex flex-col overflow-hidden">
+        {/* Modal Top Bar (no-print) */}
+        <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50 no-print">
+          <div className="flex items-center space-x-2.5">
+            <div className="p-2 bg-[#1E40AF] text-white rounded-lg">
+              <Receipt className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-slate-900">Commercial Tax Invoice &amp; Payment Statement</h2>
+              <p className="text-[11px] text-slate-500 font-medium">Legally binding tax bill for export and customs reconciliation</p>
+            </div>
+          </div>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => onExportCsv && onExportCsv(invoice)}
+              className="px-3.5 py-1.5 border border-slate-300 hover:bg-slate-100 text-slate-700 text-xs font-bold rounded-lg flex items-center space-x-1.5 transition"
+              title="Download CSV for this Invoice"
+            >
+              <Download className="w-3.5 h-3.5 text-slate-500" />
+              <span>Export CSV</span>
+            </button>
+            <button
+              onClick={() => window.print()}
+              className="px-4 py-1.5 bg-[#1E40AF] hover:bg-blue-800 text-white text-xs font-bold rounded-lg shadow-sm flex items-center space-x-1.5 transition"
+            >
+              <Printer className="w-3.5 h-3.5" />
+              <span>Print / Save as PDF</span>
+            </button>
+            <button onClick={onClose} className="p-1.5 hover:bg-slate-200 rounded-lg text-slate-500 transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Printable Document Body */}
+        <div className="p-8 overflow-y-auto flex-1 font-sans bg-white print-document">
+          {/* Header */}
+          <div className="flex items-start justify-between border-b-2 border-[#1E40AF] pb-5">
+            <div>
+              <div className="flex items-center space-x-2">
+                <span className="text-2xl font-black tracking-tight text-[#1E40AF]">SOILEX</span>
+                <span className="text-xs font-bold text-[#D97706] tracking-widest uppercase mt-1">LIFE SCIENCE LTD</span>
+              </div>
+              <p className="text-[11px] text-slate-500 font-medium mt-0.5">Agricultural Commodities, Spices, Extracts &amp; Global Trade</p>
+              <div className="text-[10px] text-slate-400 mt-2 space-y-0.5">
+                <p>Hanoi HQ: Charmvit Tower, 117 Tran Duy Hung, Cau Giay, Hanoi, Vietnam</p>
+                <p>Haiphong Maritime Logistics Hub: Dinh Vu Industrial Zone, Hai An, Haiphong</p>
+                <p>Tax / VAT Reg: <strong>VN-0108928374</strong> • Tel: +84 (24) 3782-9900 • finance@soilex.vn</p>
+              </div>
+            </div>
+
+            <div className="text-right">
+              <span className="inline-block px-3 py-1 bg-[#1E40AF] text-white text-xs font-black uppercase tracking-wider rounded">
+                COMMERCIAL INVOICE
+              </span>
+              <p className="text-base font-black text-slate-800 font-mono mt-2">{invoice.invoice_number}</p>
+              <p className="text-[11px] text-slate-500 mt-0.5">Invoice Date: <span className="font-semibold text-slate-700">{invoice.invoice_date}</span></p>
+              <p className="text-[11px] text-slate-500">Payment Due: <span className="font-bold text-red-600">{invoice.due_date}</span></p>
+              <span className={`inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded ${STATUS_COLORS[invoice.status] || 'bg-slate-100'}`}>
+                {invoice.status}
+              </span>
+            </div>
+          </div>
+
+          {/* Customer & Billing Info Grid */}
+          <div className="grid grid-cols-2 gap-6 my-6 text-xs">
+            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-[#1E40AF] mb-2">BILLED TO (BUYER / CONSIGNEE)</p>
+              <p className="text-sm font-bold text-slate-800">{invoice.customer_name}</p>
+              <div className="text-[11px] text-slate-600 mt-2 space-y-1">
+                <p><span className="text-slate-400">Associated Sales Order:</span> <strong className="font-mono">{invoice.so_number || 'Direct Invoice'}</strong></p>
+                <p><span className="text-slate-400">Payment Terms:</span> <strong>{invoice.payment_terms || 'Net 30 Days'}</strong></p>
+                <p><span className="text-slate-400">Settlement Currency:</span> <strong>USD ($)</strong></p>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-[#1E40AF] mb-2">SWIFT WIRE SETTLEMENT DETAILS</p>
+              <div className="text-[11px] text-slate-600 space-y-1">
+                <p><span className="text-slate-400">Beneficiary Name:</span> <strong>SOILEX Life Science Ltd</strong></p>
+                <p><span className="text-slate-400">Settlement Bank:</span> <strong>Standard Chartered Bank / HDFC Forex</strong></p>
+                <p><span className="text-slate-400">SWIFT / BIC:</span> <strong className="font-mono">SCBLVNVX</strong></p>
+                <p><span className="text-slate-400">Forex Remittance IBAN:</span> <strong className="font-mono">8829-4402-9912-USD</strong></p>
+              </div>
+            </div>
+          </div>
+
+          {/* Billed Items Table */}
+          <div className="border border-slate-200 rounded-xl overflow-hidden mb-6">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="bg-slate-100 text-slate-600 border-b border-slate-200 text-[10px] font-bold uppercase tracking-wider">
+                  <th className="py-2.5 px-3 text-left w-10">#</th>
+                  <th className="py-2.5 px-3 text-left">Commodity / Billing Description</th>
+                  <th className="py-2.5 px-3 text-right">Billed Qty</th>
+                  <th className="py-2.5 px-3 text-right">Unit Rate</th>
+                  <th className="py-2.5 px-3 text-right">Tax Rate</th>
+                  <th className="py-2.5 px-3 text-right">Net Amount</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {(invoice.items && invoice.items.length > 0 ? invoice.items : [{
+                  item_name: `Billed Consignment as per SO ${invoice.so_number || ''}`,
+                  quantity: 1,
+                  rate: invoice.subtotal || invoice.grand_total,
+                  tax_rate: 0,
+                  amount: invoice.subtotal || invoice.grand_total
+                }]).map((item, idx) => {
+                  const lineAmt = item.amount || (item.quantity * item.rate);
+                  return (
+                    <tr key={idx} className="hover:bg-slate-50/50">
+                      <td className="py-2.5 px-3 text-slate-400 font-mono text-[11px]">{idx + 1}</td>
+                      <td className="py-2.5 px-3">
+                        <p className="font-bold text-slate-800">{item.item_name}</p>
+                        {item.description && <p className="text-[10px] text-slate-400">{item.description}</p>}
+                      </td>
+                      <td className="py-2.5 px-3 text-right font-semibold text-slate-700">{item.quantity}</td>
+                      <td className="py-2.5 px-3 text-right text-slate-700 font-mono">${(item.rate || 0).toLocaleString()}</td>
+                      <td className="py-2.5 px-3 text-right text-slate-500">{item.tax_rate ? `${item.tax_rate}%` : '0%'}</td>
+                      <td className="py-2.5 px-3 text-right font-bold text-slate-900 font-mono">${lineAmt.toLocaleString()}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Totals & Aging */}
+          <div className="grid grid-cols-2 gap-6 items-start mb-8 text-xs">
+            <div className="space-y-3">
+              <div className="bg-emerald-50/70 border border-emerald-200 rounded-xl p-3 text-[11px] text-emerald-900 leading-relaxed">
+                <p className="font-bold mb-1 text-[10px] uppercase tracking-wider text-emerald-800">Commercial Tax Compliance</p>
+                <p className="text-[10px] text-emerald-800">
+                  This document serves as an official electronic Commercial Tax Invoice under the General Department of Taxation regulations. Payment must be transferred strictly into the nominated corporate bank account above.
+                </p>
+              </div>
+
+              {invoice.remarks && (
+                <div className="text-[11px] text-slate-500">
+                  <span className="font-bold text-slate-700">Remarks: </span>{invoice.remarks}
+                </div>
+              )}
+            </div>
+
+            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 space-y-2">
+              <div className="flex justify-between text-slate-600">
+                <span>Taxable Subtotal:</span>
+                <span className="font-semibold font-mono">${(invoice.subtotal || invoice.grand_total || 0).toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-slate-600">
+                <span>Tax / Duty (0% Export Zero-Rated):</span>
+                <span className="font-semibold font-mono">${(invoice.tax_amount || 0).toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-base font-black text-[#1E40AF] border-t border-slate-200 pt-2 mt-2">
+                <span>Invoice Total:</span>
+                <span className="font-mono">${(invoice.grand_total || 0).toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-xs text-emerald-700 font-semibold border-t border-slate-100 pt-1">
+                <span>Amount Paid:</span>
+                <span className="font-mono">${(invoice.paid_amount || 0).toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-xs text-amber-600 font-bold">
+                <span>Outstanding Balance Due:</span>
+                <span className="font-mono">${(invoice.outstanding_amount || invoice.grand_total || 0).toLocaleString()}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Signatures & Seal Block */}
+          <div className="pt-6 border-t border-slate-200 flex items-end justify-between text-xs">
+            <div className="space-y-1">
+              <div className="w-36 h-12 border-b border-slate-400 mb-1 flex items-center justify-center italic text-slate-400 text-[10px]">
+                [Digital Authorization]
+              </div>
+              <p className="font-bold text-slate-800">Tran Thi Mai</p>
+              <p className="text-slate-500 text-[11px]">Chief Financial Officer</p>
+              <p className="text-slate-400 text-[10px]">SOILEX Life Science Ltd</p>
+            </div>
+
+            {/* Corporate Seal Emblem */}
+            <div className="w-24 h-24 rounded-full border-2 border-dashed border-[#1E40AF]/40 flex flex-col items-center justify-center p-1 text-center text-[#1E40AF] select-none">
+              <Building2 className="w-5 h-5 text-[#1E40AF]/60" />
+              <span className="text-[7px] font-black uppercase mt-0.5 tracking-tighter">SOILEX SEAL</span>
+              <span className="text-[6px] font-semibold text-slate-400">FINANCE / TAX</span>
+            </div>
+
+            <div className="space-y-1 text-right">
+              <div className="w-36 h-12 border-b border-slate-400 mb-1 ml-auto flex items-center justify-center italic text-slate-400 text-[10px]">
+                [Accounts Receivable Stamp]
+              </div>
+              <p className="font-bold text-slate-800">Ho Chi Minh Treasury</p>
+              <p className="text-slate-500 text-[11px]">Financial Clearing &amp; Audit</p>
+              <p className="text-slate-400 text-[10px]">Document Hash: {invoice.id}-TAX-VALID</p>
+            </div>
+          </div>
+
+          <div className="text-center text-[9px] text-slate-400 border-t border-slate-100 pt-3 mt-6">
+            Official E-Invoice generated by SOILEX Life Science ERP • Recognized by Vietnam General Department of Taxation
+          </div>
+        </div>
+
+        {/* Modal Footer (no-print) */}
+        <div className="p-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between no-print">
+          <span className="text-xs text-slate-500">
+            Click <strong>Print / Save as PDF</strong> to generate high-resolution A4 document or print to PDF.
+          </span>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 hover:bg-white"
+            >
+              Close
+            </button>
+            <button
+              onClick={() => window.print()}
+              className="px-5 py-2 bg-[#1E40AF] hover:bg-blue-800 text-white rounded-lg text-xs font-bold shadow flex items-center space-x-1.5 transition"
+            >
+              <Printer className="w-4 h-4" />
+              <span>Print / Save as PDF</span>
+            </button>
           </div>
         </div>
       </div>
