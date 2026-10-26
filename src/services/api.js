@@ -72,6 +72,10 @@ class ApiService {
     return this._request('GET', '/dashboard/executive-summary');
   }
 
+  async getPresentationCharts() {
+    return this._request('GET', '/dashboard/presentation-charts');
+  }
+
   // ──────────────────── Products ────────────────────
   async getProducts(category = null, search = null) {
     let qs = '';
