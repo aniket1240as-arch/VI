@@ -603,6 +603,399 @@ def seed_database():
                 )
 
 
+    
+        # Asset Types & Assets (Live System Reverse Engineered)
+        count = db_manager.execute_one("SELECT COUNT(*) as c FROM asset_types", [])['c']
+        if count == 0:
+            logger.info("Seeding Asset Types and Assets...")
+            types = [
+                ('AST-TYP-01', 'LAPTOP', 'ACTIVE'),
+                ('AST-TYP-02', 'VEHICLE', 'ACTIVE'),
+                ('AST-TYP-03', 'LAB EQUIPMENT', 'ACTIVE'),
+                ('AST-TYP-04', 'TABLET', 'ACTIVE'),
+                ('AST-TYP-05', 'MOBILE PHONE', 'ACTIVE'),
+                ('AST-TYP-06', 'PRINTER', 'ACTIVE'),
+                ('AST-TYP-07', 'CHAIR', 'ACTIVE'),
+                ('AST-TYP-08', 'SOFA', 'ACTIVE'),
+                ('AST-TYP-09', 'CAR INSURANCE', 'ACTIVE'),
+                ('AST-TYP-10', 'OTHER', 'ACTIVE'),
+            ]
+            for t in types:
+                db_manager.execute_write(
+                    "INSERT INTO asset_types (id, name, status) VALUES (?, ?, ?)",
+                    list(t)
+                )
+
+        count = db_manager.execute_one("SELECT COUNT(*) as c FROM assets", [])['c']
+        if count == 0:
+            assets = [
+                ('AST-001', 'AST-IT-001', 'MacBook Pro 16 M2 Max', 'LAPTOP', 'AST-TYP-01', 'Vũ Thị Hoan', 'Hanoi HQ', 'Apple', 'MacBook Pro 16', 'MP-2024-001', '2024-02-15', '2027-02-15', 15.0, 3200.0, 'ACTIVE'),
+                ('AST-002', 'AST-LAB-002', 'Shimadzu Moisture Analyzer MS-70', 'LAB EQUIPMENT', 'AST-TYP-03', 'Rajesh Sharma', 'Kochi Spices Lab', 'Shimadzu', 'MS-70 Pro', 'SHM-99124', '2023-08-10', '2028-08-10', 10.0, 8500.0, 'ACTIVE'),
+                ('AST-003', 'AST-LOG-003', 'Toyota Hilux 4x4 Logistics Double Cab', 'VEHICLE', 'AST-TYP-02', 'Nguyễn Văn Hùng', 'Hai Phong Port Logistics Depot', 'Toyota', 'Hilux Revo', 'VN-29H-88219', '2023-01-20', '2028-01-20', 12.5, 32000.0, 'ACTIVE'),
+                ('AST-004', 'AST-IT-004', 'iPad Pro 12.9 M2 Cellular', 'TABLET', 'AST-TYP-04', 'Priya Nair', 'Hanoi HQ', 'Apple', 'iPad Pro 6th Gen', 'DLX-77218-A', '2024-05-12', '2026-05-12', 20.0, 1450.0, 'ACTIVE'),
+                ('AST-005', 'AST-OFF-005', 'HP LaserJet Enterprise M608dn', 'PRINTER', 'AST-TYP-06', 'Executive Office', 'Hanoi HQ', 'HP', 'LaserJet M608dn', 'CNB992147', '2023-11-01', '2026-11-01', 15.0, 1800.0, 'ACTIVE'),
+                ('AST-006', 'AST-LOG-006', 'Commercial Cold-Storage Freight Van', 'VEHICLE', 'AST-TYP-02', 'Nguyễn Văn Hùng', 'Hai Phong Plant', 'Isuzu', 'QKR77FE4 2.5T', 'VN-30G-44109', '2022-09-15', '2027-09-15', 10.0, 28000.0, 'ACTIVE'),
+                ('AST-007', 'AST-OFF-007', 'Ergonomic Executive Mesh Chair Aeron', 'CHAIR', 'AST-TYP-07', 'Executive Admin', 'Hanoi HQ', 'Herman Miller', 'Aeron Size B', 'HM-AER-4491', '2023-03-01', '2033-03-01', 5.0, 1600.0, 'ACTIVE'),
+            ]
+            for a in assets:
+                db_manager.execute_write(
+                    "INSERT INTO assets (id, code, name, type_name, type_id, assigned_to, branch, brand, model, serial_no, purchase_date, expiry_date, depreciation_rate, cost, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    list(a)
+                )
+
+
+    
+        # Extended System Masters Seeding (from live system screenshots)
+        count = db_manager.execute_one("SELECT COUNT(*) as c FROM admin_banks", [])['c']
+        if count == 0:
+            banks = [
+                ('BNK-01', 'MB BANK - VND', 'Military Commercial Joint Stock Bank', 'SOILEX VIETNAM LLC', '0881100293001', 'VND', 'IV INT - HN', 'MBVCVNVX', '', ''),
+                ('BNK-02', 'VIETCOM BANK - VND', 'Joint Stock Commercial Bank for Foreign Trade of Vietnam', 'SOILEX VIETNAM LLC', '0011004482910', 'VND', 'IV INT - HN', 'BFTVVNVX', '', ''),
+                ('BNK-03', 'TECHCOM - VND', 'Vietnam Technological and Commercial Joint Stock Bank', 'SOILEX VIETNAM LLC', '1903388291001', 'VND', 'IV INT - HN', 'VTCBVNVX', '', ''),
+                ('BNK-04', 'MB - USD', 'Military Commercial Joint Stock Bank (USD Trade Account)', 'SOILEX VIETNAM LLC', '0881100994002', 'USD', 'IV INT - HN', 'MBVCVNVX', '', ''),
+                ('BNK-05', 'ICICI BANK - INR', 'ICICI Bank Export Desk Kochi', 'SOILEX LIFE SCIENCE PVT LTD', '002905018821', 'INR', 'IV INT - KC', 'ICIC0000029', 'ICIC0000029', ''),
+            ]
+            for b in banks:
+                db_manager.execute_write(
+                    "INSERT INTO admin_banks (id, short_name, bank_name, account_name, account_no, currency, branch, swift_code, ifsc_code, iban) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    list(b)
+                )
+
+        count = db_manager.execute_one("SELECT COUNT(*) as c FROM admin_ports", [])['c']
+        if count == 0:
+            ports = [
+                ('PRT-01', 'KOLKATA PORT', 'KOLKATA', 'INCCU', 'INDIA', 'Primary Eastern India Gateway', 'ACTIVE'),
+                ('PRT-02', 'HALDIA DOCK COMPLEX', 'HALDIA', 'INHAL', 'INDIA', 'Bulk Grain & DDGS Terminal', 'ACTIVE'),
+                ('PRT-03', 'KRISHNAPATNAM PORT', 'KRISHNAPATNAM', 'INKRI', 'INDIA', 'Containerized Agro Export Berth', 'ACTIVE'),
+                ('PRT-04', 'HAI PHONG PORT', 'HAI PHONG', 'VNHPH', 'VIETNAM', 'Northern Vietnam Main Export Terminal', 'ACTIVE'),
+                ('PRT-05', 'CAT LAI PORT HCM', 'HO CHI MINH', 'VNSGN', 'VIETNAM', 'Southern Vietnam Transshipment Hub', 'ACTIVE'),
+                ('PRT-06', 'JEBEL ALI PORT', 'DUBAI', 'AEJEA', 'UAE', 'Middle East Distribution Hub', 'ACTIVE'),
+                ('PRT-07', 'MERSIN PORT', 'MERSIN', 'TRMER', 'TURKEY', 'Mediterranean Mediterranean Gateway', 'ACTIVE'),
+                ('PRT-08', 'COTONOU PORT', 'COTONOU', 'BJCOO', 'BENIN', 'West Africa Breakbulk Berth', 'ACTIVE'),
+            ]
+            for p in ports:
+                db_manager.execute_write(
+                    "INSERT INTO admin_ports (id, name, short_name, code, country, remark, status) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    list(p)
+                )
+
+        count = db_manager.execute_one("SELECT COUNT(*) as c FROM admin_qc_parties", [])['c']
+        if count == 0:
+            qc_parties = [
+                ('QC-01', 'SGS VIETNAM CO., LTD', 'sgs.vietnam@sgs.com', '+84 28 3816 0999', 'Lot III-1, Road 19/5A, Tan Binh IP', 'Ho Chi Minh', 'HCMC', 'VIETNAM', '700000', 'VN-0301416781'),
+                ('QC-02', 'GEO-CHEM LABORATORIES PVT LTD', 'qc.kochi@geochem.net', '+91 484 222 4118', 'Willingdon Island Port Area', 'Kochi', 'Kerala', 'INDIA', '682003', 'AAACG1928K'),
+                ('QC-03', 'BUREAU VERITAS AGRO LAB', 'contact.agro@bureauveritas.com', '+91 33 2289 1200', 'Park Street Commercial Plaza', 'Kolkata', 'West Bengal', 'INDIA', '700016', 'AAACB4412M'),
+            ]
+            for q in qc_parties:
+                db_manager.execute_write(
+                    "INSERT INTO admin_qc_parties (id, name, email, phone, address, city, state, country, pincode, pan_no) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    list(q)
+                )
+
+        count = db_manager.execute_one("SELECT COUNT(*) as c FROM admin_notify_parties", [])['c']
+        if count == 0:
+            notify_parties = [
+                ('NP-01', 'BOMBAY FOODSTUFF TRADING CO. L.L.C', 'trade@bombayfoodstuff.ae', '+971 4 226 8812', 'Al Ras Street, Deira', 'Dubai', 'Dubai', 'UAE', 'PO 1842', 'N/A'),
+                ('NP-02', 'WETHREE GROUP LTD', 'imports@wethree.com', '+84 24 3974 8811', 'Phan Chu Trinh, Hoan Kiem', 'Hanoi', 'Hanoi', 'VIETNAM', '100000', 'N/A'),
+                ('NP-03', 'SANABEL AL ULA GENERAL TRADING LLC', 'info@sanabelalula.ae', '+971 4 338 1244', 'Al Quoz Industrial Area 3', 'Dubai', 'Dubai', 'UAE', 'PO 9912', 'N/A'),
+                ('NP-04', 'LOYAL ENERGY GENERAL TRADING FZCO', 'ops@loyalenergy.ae', '+971 50 441 7910', 'Dubai Silicon Oasis DDP', 'Dubai', 'Dubai', 'UAE', 'PO 5501', 'N/A'),
+            ]
+            for n in notify_parties:
+                db_manager.execute_write(
+                    "INSERT INTO admin_notify_parties (id, name, email, phone, address, city, state, country, pincode, province) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    list(n)
+                )
+
+        count = db_manager.execute_one("SELECT COUNT(*) as c FROM admin_payees", [])['c']
+        if count == 0:
+            payees = [
+                ('PY-01', 'BANK INTREST RECEIVED', '0000000000', 'IV INT - HCM', 'ACTIVE'),
+                ('PY-02', 'MR. VENKAT (DUABI)', '+971 55 918 2210', 'IV INT - HN', 'ACTIVE'),
+                ('PY-03', 'SHIVANSHU KR.', '+84 90 411 8821', 'IV INT - HN', 'ACTIVE'),
+                ('PY-04', 'CASH IN OFFICE PETTY CASH', '0000000000', 'IV INT - YEN BAI', 'ACTIVE'),
+                ('PY-05', 'MR. RAVI ICICI SETTLEMENT', '+91 98410 22910', 'IV INT - KC', 'ACTIVE'),
+            ]
+            for p in payees:
+                db_manager.execute_write(
+                    "INSERT INTO admin_payees (id, name, phone, branch, status) VALUES (?, ?, ?, ?, ?)",
+                    list(p)
+                )
+
+
+        # ─────────────────────────────────────────────────────────────
+        # Extended System Masters (Complete Live System Reverse Engineered)
+        count = db_manager.execute_one("SELECT COUNT(*) as c FROM admin_company_profiles", [])['c']
+        if count == 0:
+            profiles = [
+                ('COMP-01', 'COMP000001', 'IV INTERNATIONAL COMPANY', 'CÔNG TY QUỐC TẾ VIỆT NAM ẤN ĐỘ', 'No. 12 Phan Chu Trinh, Hoan Kiem, Hanoi', 'Số 12 Phan Chu Trinh, Hoàn Kiếm, Hà Nội', '+84 24 3974 8811', 'info@ivicl.com', '', '', '', 'ACTIVE'),
+            ]
+            for cp in profiles:
+                db_manager.execute_write(
+                    "INSERT INTO admin_company_profiles (id, code, name_en, name_vi, address_en, address_vi, phone, email, logo_url, signature_url, favicon_url, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    list(cp)
+                )
+
+        count = db_manager.execute_one("SELECT COUNT(*) as c FROM admin_branches", [])['c']
+        if count == 0:
+            branches = [
+                ('BR-01', 'BRNC000001', 'IV INT - HN', '+84 24 3743 0768', 'hanoi@ivicl.com', 'Hanoi HQ Commercial Office', 'VIETNAM', 'Hanoi', 'Hanoi', '100000', 'VND', 145000000.0, 'ACTIVE'),
+                ('BR-02', 'BRNC000002', 'IV INT - HCM', '+84 28 3968 1399', 'hcm@ivicl.com', 'Tan Binh Transshipment Berth Office', 'VIETNAM', 'Ho Chi Minh', 'Ho Chi Minh', '700000', 'VND', 82000000.0, 'ACTIVE'),
+                ('BR-03', 'BRNC000003', 'IV INT - YEN BAI', '+84 21 6385 1102', 'yenbai@ivicl.com', 'Yen Bai Agro Processing Center', 'VIETNAM', 'Yen Bai', 'Yen Bai', '320000', 'VND', 45000000.0, 'ACTIVE'),
+                ('BR-04', 'BRNC000004', 'IV INT - KC', '+91 484 222 4110', 'kochi@ivicl.com', 'Willingdon Island Terminal Office', 'INDIA', 'Kerala', 'Kochi', '682003', 'INR', 2500000.0, 'ACTIVE'),
+            ]
+            for br in branches:
+                db_manager.execute_write(
+                    "INSERT INTO admin_branches (id, code, name, phone, email, address, country, state, city, pincode, currency, cash_balance, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    list(br)
+                )
+
+        count = db_manager.execute_one("SELECT COUNT(*) as c FROM admin_master_warehouses", [])['c']
+        if count == 0:
+            whs = [
+                ('WH-01', 'IV WAREHOUSE - HANOI CENTRAL', 'VIETNAM', 'ACTIVE'),
+                ('WH-02', 'HAI PHONG PORT BONDED DEPOT', 'VIETNAM', 'ACTIVE'),
+                ('WH-03', 'KOCHI SPICES EXTRACTION SILO', 'INDIA', 'ACTIVE'),
+            ]
+            for w in whs:
+                db_manager.execute_write(
+                    "INSERT INTO admin_master_warehouses (id, name, location, status) VALUES (?, ?, ?, ?)",
+                    list(w)
+                )
+
+        count = db_manager.execute_one("SELECT COUNT(*) as c FROM admin_master_locations", [])['c']
+        if count == 0:
+            locs = [
+                ('LOC-01', 'Bay A-4 (Spices Cold Bay)', 'IV WAREHOUSE - HANOI CENTRAL', 'Moisture-controlled spices lot zone', 'ACTIVE'),
+                ('LOC-02', 'Silo HJ-01 (Coffee Intake)', 'HAI PHONG PORT BONDED DEPOT', 'Bulk green coffee intake silo', 'ACTIVE'),
+                ('LOC-03', 'Zone HJ-02 (Palletized Grains)', 'HAI PHONG PORT BONDED DEPOT', 'Non-GMO corn dry storage zone', 'ACTIVE'),
+                ('LOC-04', 'Terminal Cell K-01', 'KOCHI SPICES EXTRACTION SILO', 'Black pepper FAQ clean bay', 'ACTIVE'),
+            ]
+            for l in locs:
+                db_manager.execute_write(
+                    "INSERT INTO admin_master_locations (id, name, warehouse_name, remark, status) VALUES (?, ?, ?, ?, ?)",
+                    list(l)
+                )
+
+        count = db_manager.execute_one("SELECT COUNT(*) as c FROM admin_expense_categories", [])['c']
+        if count == 0:
+            exp_cats = [
+                ('EXP-01', 'OFFICE', 'EXHIBITION & TRADE FAIRS', 'Commercial Marketing', 'Gulfood & Biofach booths', 'ACTIVE'),
+                ('EXP-02', 'EMPLOYEE', 'TAXI & LOCAL LOGISTICS', 'Travel Allowance', 'Field inspection taxi reimbursement', 'ACTIVE'),
+                ('EXP-03', 'OFFICE', 'TRADE LICENCE RENEWAL', 'Statutory Fees', 'Import/Export annual registration', 'ACTIVE'),
+                ('EXP-04', 'OFFICE', 'VAT & LOCAL TAX EXPENSE', 'Accounting & Tax', 'Provincial VAT assessments', 'ACTIVE'),
+                ('EXP-05', 'OFFICE', 'BANK SUBSCRIPTION & SWIFT FEES', 'Financial Charges', 'LC confirmation & MT700 transmission', 'ACTIVE'),
+                ('EXP-06', 'EMPLOYEE', 'BUYER-SUPPLIER MEETINGS', 'Business Development', 'Executive dinners & tasting sessions', 'ACTIVE'),
+                ('EXP-07', 'EMPLOYEE', 'MR. KUMAR FIELD EXPENSES', 'Operational Travel', 'Yen Bai farm visits and grading', 'ACTIVE'),
+                ('EXP-08', 'OFFICE', 'REPAIR & MAINTENANCE EXPENSES', 'Facility Upkeep', 'Depot pallet jack & crane service', 'ACTIVE'),
+            ]
+            for ec in exp_cats:
+                db_manager.execute_write(
+                    "INSERT INTO admin_expense_categories (id, expense_type, name, group_name, remark, status) VALUES (?, ?, ?, ?, ?, ?)",
+                    list(ec)
+                )
+
+        count = db_manager.execute_one("SELECT COUNT(*) as c FROM admin_vendors", [])['c']
+        if count == 0:
+            vndrs = [
+                ('VND-01', 'VENDR000001', 'CHUBB VIETNAM INSURANCE COMPANY LIMITED', 'CHUBB', '+84 28 3910 7300', 'marine.claims@chubb.com', 'Saigon Tower, Dist 1', 'VIETNAM', 'HCMC', 'Ho Chi Minh', '700000', 'ACTIVE'),
+                ('VND-02', 'VENDR000002', 'EVERGREEN SHIPPING AGENCY (VIETNAM) COMPANY LIMITED', 'EVERGREEN', '+84 22 5382 7888', 'haiphong@evergreen-shipping.com.vn', 'Hai Phong Port Tower, Le Thanh Tong', 'VIETNAM', 'Hai Phong', 'Hai Phong', '180000', 'ACTIVE'),
+                ('VND-03', 'VENDR000003', 'HMM SHIPPING VIETNAM', 'HMM', '+84 24 3934 6699', 'hnoi.sales@hmm21.com', 'Gelex Tower, Hai Ba Trung', 'VIETNAM', 'Hanoi', 'Hanoi', '100000', 'ACTIVE'),
+                ('VND-04', 'VENDR000004', 'CUBIK LOGISTICS COMPANY LIMITED', 'CUBIK', '+84 28 6296 8811', 'ops@cubiklogistics.com', 'Tan Binh Logistics Complex', 'VIETNAM', 'HCMC', 'Ho Chi Minh', '700000', 'ACTIVE'),
+                ('VND-05', 'VENDR000005', 'GOLDEN TIME LOGISTICS VN COMPANY LIMITED', 'GOLDEN TIME', '+84 22 5374 9912', 'trucking@goldentimelog.vn', 'Dinh Vu Industrial Zone', 'VIETNAM', 'Hai Phong', 'Hai Phong', '180000', 'ACTIVE'),
+            ]
+            for v in vndrs:
+                db_manager.execute_write(
+                    "INSERT INTO admin_vendors (id, code, name, short_name, phone, email, address, country, state, city, pincode, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    list(v)
+                )
+
+        count = db_manager.execute_one("SELECT COUNT(*) as c FROM admin_global_settings", [])['c']
+        if count == 0:
+            settings_list = [
+                ('SET-01', 'ORDER_TYPE', 'EXPORT_LOADING_QC_SERIES', 'EXP-QC-2026-', 'ACTIVE'),
+                ('SET-02', 'IMPORT_ORDER_TYPE', 'IMPORT_DELIVERY_CLAIM_SERIES', 'IMP-CLM-2026-', 'ACTIVE'),
+                ('SET-03', 'IMPORT_ORDER_TYPE', 'IMPORT_SO_DEBIT_NOTE_SERIES', 'DN-2026-', 'ACTIVE'),
+                ('SET-04', 'IMPORT_ORDER_TYPE', 'IMPORT_PO_CREDIT_NOTE_SERIES', 'CN-2026-', 'ACTIVE'),
+                ('SET-05', 'IMPORT_ORDER_TYPE', 'IMPORT_WAREHOUSE_DELIVERY_SERIES', 'DEL-2026-', 'ACTIVE'),
+            ]
+            for s in settings_list:
+                db_manager.execute_write(
+                    "INSERT INTO admin_global_settings (id, setting_type, setting_key, setting_value, status) VALUES (?, ?, ?, ?, ?)",
+                    list(s)
+                )
+
+        count = db_manager.execute_one("SELECT COUNT(*) as c FROM admin_common_pages", [])['c']
+        if count == 0:
+            pages = [
+                ('CP-01', 'IMPORT SALE INVOICE TERMS', 'TERMS_CONDITIONS', 'IMPORT SALE INVOICE', 'Payment 100% against copy of shipping documents within 15 days of vessel arrival at destination port. Title remains with seller until full settlement.', 'ACTIVE'),
+                ('CP-02', 'EXPORT SALE DOCUMENT LIST', 'DOCUMENT_LIST', 'EXPORT SALE', '1. Original Bill of Lading (3/3 Clean on Board)\n2. Signed Commercial Invoice (3 copies)\n3. Certificate of Origin issued by VCCI\n4. Phytosanitary Certificate\n5. Quality & Weight by SGS', 'ACTIVE'),
+                ('CP-03', 'EXPORT INVOICE PAYMENT TERMS', 'PAYMENT_TERMS', 'EXPORT INVOICE', 'Irrevocable Letter of Credit (LC) at sight payable 100% against compliant shipping documents presentation at negotiating bank.', 'ACTIVE'),
+            ]
+            for p in pages:
+                db_manager.execute_write(
+                    "INSERT INTO admin_common_pages (id, name, page_key, page_type, details, status) VALUES (?, ?, ?, ?, ?, ?)",
+                    list(p)
+                )
+
+        count = db_manager.execute_one("SELECT COUNT(*) as c FROM admin_access_logs", [])['c']
+        if count == 0:
+            logs = [
+                ('LOG-01', '2026-02-28 14:38:00', 'CEO', 'App\\ExportSalesPi', 'UPDATED', 'https://stage-erp.ivicl.com/exportsalespis', '127.0.0.1'),
+                ('LOG-02', '2026-02-28 11:10:00', 'System Admin', 'App\\WarehouseInventory', 'CREATED', 'https://stage-erp.ivicl.com/inventory', '127.0.0.1'),
+                ('LOG-03', '2026-02-27 16:45:00', 'CEO', 'App\\UserUpdateProfile', 'UPDATED', 'https://stage-erp.ivicl.com/updateuserpassword', '127.0.0.1'),
+                ('LOG-04', '2026-02-26 09:20:00', 'Quality Manager', 'App\\OrderExecution', 'VERIFIED', 'https://stage-erp.ivicl.com/orderexecution', '127.0.0.1'),
+            ]
+            for lg in logs:
+                db_manager.execute_write(
+                    "INSERT INTO admin_access_logs (id, date_time, user_name, model_name, event, url, ip_address) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    list(lg)
+                )
+
+        # Phase 2: Warehouse & Inventory Seeding
+        # ─────────────────────────────────────────────────────────────
+        count = db_manager.execute_one("SELECT COUNT(*) as c FROM warehouse_inventory", [])['c']
+        if count == 0:
+            wh_inv = [
+                ('WH-INV-01', 'CASSIA-SPL-A', 'Cassia Split Grade A', 'SPICES', 'Hanoi Bonded Warehouse', 142.50, 25.0, 117.50, 10.0, 3100.0, 'IN_STOCK'),
+                ('WH-INV-02', 'STAR-ANISE-W', 'Star Anise Whole Autumn Crop', 'SPICES', 'Hai Phong Central Port Depot', 88.00, 15.0, 73.00, 8.0, 4800.0, 'IN_STOCK'),
+                ('WH-INV-03', 'BLACK-PEP-500', 'Black Pepper 500g/l FAQ', 'SPICES', 'Kochi Spices Terminal', 210.00, 40.0, 170.00, 20.0, 3950.0, 'IN_STOCK'),
+                ('WH-INV-04', 'ROB-COF-G1', 'Robusta Coffee Beans Screen 18', 'GRAINS & COFFEE', 'Buon Ma Thuot Depot', 350.00, 60.0, 290.00, 30.0, 2450.0, 'IN_STOCK'),
+                ('WH-INV-05', 'YELLOW-CORN-ARG', 'Argentine Non-GMO Yellow Corn', 'ANIMAL FEED', 'Hai Phong Central Port Depot', 1200.00, 300.0, 900.00, 100.0, 280.0, 'IN_STOCK'),
+                ('WH-INV-06', 'SOYBEAN-MEAL-IND', 'Indian De-Oiled Toasted Soybean Meal', 'ANIMAL FEED', 'Kolkata Port Silo 4', 650.00, 150.0, 500.00, 50.0, 460.0, 'IN_STOCK'),
+            ]
+            for item in wh_inv:
+                db_manager.execute_write(
+                    "INSERT INTO warehouse_inventory (id, item_code, item_name, category, warehouse_name, stock_mt, allocated_mt, available_mt, reorder_level_mt, unit_cost_usd, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    list(item)
+                )
+
+        count = db_manager.execute_one("SELECT COUNT(*) as c FROM warehouse_transactions", [])['c']
+        if count == 0:
+            txns = [
+                ('TXN-STK-001', 'STK-2026-001', 'STOCK_IN', 'CASSIA-SPL-A', 'Cassia Split Grade A', 'Hanoi Bonded Warehouse', 50.0, 'IMP/IV/PO/2026-51', 'VAST EXIM VIETNAM', '29C-882.14', '2026-02-18', 'Batch cleared phytosanitary inspection', 'COMPLETED'),
+                ('TXN-STK-002', 'STK-2026-002', 'STOCK_IN', 'STAR-ANISE-W', 'Star Anise Whole Autumn Crop', 'Hai Phong Central Port Depot', 30.0, 'IMP/IV/PO/2026-52', 'AGRO HIGHLANDS CO', '15B-441.90', '2026-02-22', 'Moisture 11.8% verified by SGS', 'COMPLETED'),
+                ('TXN-DEL-001', 'DEL-2026-001', 'WH_DELIVERY', 'BLACK-PEP-500', 'Black Pepper 500g/l FAQ', 'Kochi Spices Terminal', 20.0, 'SO-2026-104', 'BOMBAY FOODSTUFF TRADING CO', 'KL-07-CD-9912', '2026-02-25', 'Direct container stuffing for Jebel Ali', 'COMPLETED'),
+                ('TXN-NOT-001', 'NOT-2026-001', 'WH_NOTE', 'ROB-COF-G1', 'Robusta Coffee Beans Screen 18', 'Buon Ma Thuot Depot', 45.0, 'DISP-NOTE-2026-08', 'WETHREE GROUP LTD', '29H-110.22', '2026-02-26', 'Pre-delivery staging note issued', 'COMPLETED'),
+                ('TXN-RET-001', 'RET-2026-001', 'WH_RETURN', 'YELLOW-CORN-ARG', 'Argentine Non-GMO Yellow Corn', 'Hai Phong Central Port Depot', 5.0, 'RET-2026-03', 'HOANG GIA FEEDS', '16M-201.55', '2026-02-27', 'Bag tear in transit returned to silo', 'COMPLETED'),
+            ]
+            for t in txns:
+                db_manager.execute_write(
+                    "INSERT INTO warehouse_transactions (id, transaction_no, transaction_type, item_code, item_name, warehouse_name, quantity_mt, reference_order_no, partner_name, driver_truck_no, date, remarks, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    list(t)
+                )
+
+        count = db_manager.execute_one("SELECT COUNT(*) as c FROM warehouse_damage_logs", [])['c']
+        if count == 0:
+            damages = [
+                ('DMG-001', 'DMG-2026-001', 'DAMAGE', 'CASSIA-SPL-A', 'Cassia Split Grade A', 'Hanoi Bonded Warehouse', 1.25, 'Moisture seepage during sudden squall in bay 3', '2026-02-10', 'Nguyen Van Hung', 'CONFIRMED'),
+                ('DMG-002', 'WTL-2026-001', 'WEIGHT_LOSS', 'STAR-ANISE-W', 'Star Anise Whole Autumn Crop', 'Hai Phong Central Port Depot', 0.85, 'Natural dehydration and drying loss over 45 days', '2026-02-15', 'Pham Minh Quang', 'CONFIRMED'),
+                ('DMG-003', 'DMG-2026-002', 'DAMAGE', 'YELLOW-CORN-ARG', 'Argentine Non-GMO Yellow Corn', 'Hai Phong Central Port Depot', 2.10, 'Pallet collapse during crane movement', '2026-02-24', 'Tran Duc Thang', 'CONFIRMED'),
+            ]
+            for d in damages:
+                db_manager.execute_write(
+                    "INSERT INTO warehouse_damage_logs (id, log_no, log_type, item_code, item_name, warehouse_name, loss_mt, reason, date, inspection_officer, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    list(d)
+                )
+
+        # ─────────────────────────────────────────────────────────────
+        # Phase 2: Operations & Order Execution Seeding
+        # ─────────────────────────────────────────────────────────────
+        count = db_manager.execute_one("SELECT COUNT(*) as c FROM order_executions", [])['c']
+        if count == 0:
+            executions = [
+                ('EXEC-001', 'IMP/IV/PO/2026-51', '2026-02-01', 'VAST EXIM PRIVATE LIMITED', 'Nguyen Thu Ha', 'CT-2026-VAST-01', 54.0, 167400.0, 'USD', 'COMPLETED', 'MSKU9921440', 'BL-MSK-2026-881'),
+                ('EXEC-002', 'IMP/IV/PO/2026-52', '2026-02-10', 'JOY MA TARA AGRO OIL INDUSTRIES', 'Rajesh Sharma', 'CT-2026-JMT-04', 100.0, 48000.0, 'USD', 'IN_PROCESS', 'CMAU8120091', 'BL-CMA-77401'),
+                ('EXEC-003', 'IMP/IV/PO/2026-53', '2026-02-18', 'HINDUSTAN ANIMAL FEEDS', 'Nguyen Thu Ha', 'CT-2026-HAF-12', 250.0, 115000.0, 'USD', 'PENDING', 'ONEU1928445', 'BL-ONE-55219'),
+            ]
+            for ex in executions:
+                db_manager.execute_write(
+                    "INSERT INTO order_executions (id, po_no, date, supplier_name, purchase_manager, contract_no, quantity_mt, total_amount, currency, execution_status, container_no, bl_no) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    list(ex)
+                )
+
+        count = db_manager.execute_one("SELECT COUNT(*) as c FROM document_submissions", [])['c']
+        if count == 0:
+            submissions = [
+                ('SUB-001', 'SUB-2026-001', '2026-02-05', 'IMP/IV/PO/2026-51', 'CT-2026-VAST-01', 'VAST EXIM PRIVATE LIMITED', 'Bill of Lading, Certificate of Origin, Phytosanitary, Commercial Invoice', 'VERIFIED', 'Nguyen Thu Ha', 'All originals verified and archived'),
+                ('SUB-002', 'SUB-2026-002', '2026-02-14', 'IMP/IV/PO/2026-52', 'CT-2026-JMT-04', 'JOY MA TARA AGRO OIL INDUSTRIES', 'Commercial Invoice, Packing List, Certificate of Analysis', 'SUBMITTED', 'Rajesh Sharma', 'Phytosanitary awaiting embassy attestation'),
+                ('SUB-003', 'SUB-2026-003', '2026-02-22', 'IMP/IV/PO/2026-53', 'CT-2026-HAF-12', 'HINDUSTAN ANIMAL FEEDS', 'Insurance Certificate, Bill of Lading Draft', 'SUBMITTED', 'Priya Nair', 'Draft reviewed, pending final vessel departure'),
+            ]
+            for s in submissions:
+                db_manager.execute_write(
+                    "INSERT INTO document_submissions (id, submission_no, date, ref_no, contract_no, supplier_name, document_types, status, reviewer, remarks) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    list(s)
+                )
+
+        count = db_manager.execute_one("SELECT COUNT(*) as c FROM delivery_claims", [])['c']
+        if count == 0:
+            claims = [
+                ('CLM-001', 'CLM-2026-001', '2026-02-12', 'DEL-2026-081', 'WETHREE GROUP LTD', 1250.0, 'USD', 'Damaged packaging in 2 MT split lot', 'APPROVED'),
+                ('CLM-002', 'CLM-2026-002', '2026-02-20', 'DEL-2026-094', 'SANABEL AL ULA GENERAL TRADING', 3400.0, 'USD', 'Foreign matter variation above contractual threshold', 'UNDER_REVIEW'),
+            ]
+            for cl in claims:
+                db_manager.execute_write(
+                    "INSERT INTO delivery_claims (id, claim_no, date, delivery_ref, customer_name, claim_amount, currency, reason, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    list(cl)
+                )
+
+        # ─────────────────────────────────────────────────────────────
+        # Phase 3: Commercial Finance Debit/Credit Notes Seeding
+        # ─────────────────────────────────────────────────────────────
+        count = db_manager.execute_one("SELECT COUNT(*) as c FROM debit_credit_notes", [])['c']
+        if count == 0:
+            notes = [
+                ('DN-001', 'DN-2026-001', 'DEBIT_NOTE', '2026-02-08', 'SUPPLIER', 'VAST EXIM PRIVATE LIMITED', 'INV-2026-042', 2850.0, 'USD', 'Shortage claim on Container MSKU9921440', 'SETTLED'),
+                ('CN-001', 'CN-2026-001', 'CREDIT_NOTE', '2026-02-15', 'BUYER', 'WETHREE GROUP LTD', 'INV-2026-098', 1250.0, 'USD', 'Approved moisture discount settlement', 'SETTLED'),
+                ('DN-002', 'DN-2026-002', 'DEBIT_NOTE', '2026-02-23', 'SUPPLIER', 'JOY MA TARA AGRO OIL', 'INV-2026-110', 4120.0, 'USD', 'Demurrage charges incurred at Hai Phong Berth 4', 'UNSETTLED'),
+                ('CN-002', 'CN-2026-002', 'CREDIT_NOTE', '2026-02-26', 'BUYER', 'SANABEL AL ULA GENERAL TRADING', 'INV-2026-115', 3400.0, 'USD', 'Commercial quality tolerance adjustment', 'UNSETTLED'),
+            ]
+            for n in notes:
+                db_manager.execute_write(
+                    "INSERT INTO debit_credit_notes (id, note_no, note_type, date, party_type, party_name, invoice_ref, amount, currency, reason, payment_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    list(n)
+                )
+
+    
+        # ─────────────────────────────────────────────────────────────
+        # Phase 4: Transporters & Countries Seeding (Live System)
+        # ─────────────────────────────────────────────────────────────
+        count = db_manager.execute_one("SELECT COUNT(*) as c FROM admin_transporters", [])['c']
+        if count == 0:
+            transporters = [
+                ('TRP-001', 'MSC-LOG', 'MSC Mediterranean Overland Logistics', 'Nguyen Van Toan', '+84-225-3842100', 'ops@msc-logistics.vn', 'Container Trailer (20ft/40ft)', 145, 'Hai Phong Central Port Depot', 'Dinh Vu Industrial Zone, Hai Phong', 'ACTIVE'),
+                ('TRP-002', 'MAEU-INL', 'Maersk Intermodal Vietnam Ltd', 'Tran Minh Chau', '+84-28-38240000', 'intermodal@maersk.vn', 'Reefer Cold-Chain Trailer', 90, 'Cat Lai Logistics Hub', 'Tan Thuan Export Zone, HCMC', 'ACTIVE'),
+                ('TRP-003', 'SNP-TRK', 'Saigon Newport Overland Transport', 'Le Hoang Nam', '+84-28-37422234', 'dispatch@saigonnewport.vn', 'Multi-Axle Heavy Haulage', 220, 'Cat Lai Logistics Hub', '702 Nguyen Thi Dinh, Dist 2, HCMC', 'ACTIVE'),
+                ('TRP-004', 'TWL-IND', 'Transworld Logistics India Private Ltd', 'Arun Kumar', '+91-484-2667100', 'haulage@transworld.in', 'Bulk Grain Container Carrier', 110, 'Kochi Spices Terminal', 'Willingdon Island, Cochin, India', 'ACTIVE'),
+                ('TRP-005', 'VNL-HPH', 'Vinalines Logistics Hai Phong', 'Pham Duc Thang', '+84-225-3759912', 'trucking@vinalines.vn', 'Flatbed Container Transport', 80, 'Hai Phong Central Port Depot', 'Le Hong Phong Blvd, Hai Phong', 'ACTIVE'),
+            ]
+            for tr in transporters:
+                db_manager.execute_write(
+                    "INSERT INTO admin_transporters (id, code, name, contact_person, phone, email, fleet_type, fleet_size, hub, address, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    list(tr)
+                )
+
+        count = db_manager.execute_one("SELECT COUNT(*) as c FROM admin_countries", [])['c']
+        if count == 0:
+            countries = [
+                ('CTY-001', 'Vietnam', 'VN', 'VNM', 'VND', '+84', 'Southeast Asia', 'DOMESTIC_BASE', 'ACTIVE'),
+                ('CTY-002', 'India', 'IN', 'IND', 'INR', '+91', 'South Asia', 'REGIONAL_HUB', 'ACTIVE'),
+                ('CTY-003', 'United Arab Emirates', 'AE', 'ARE', 'AED', '+971', 'Middle East', 'FREE_TRADE_ZONE', 'ACTIVE'),
+                ('CTY-004', 'Germany', 'DE', 'DEU', 'EUR', '+49', 'European Union', 'EU_CE_COMPLIANT', 'ACTIVE'),
+                ('CTY-005', 'Singapore', 'SG', 'SGP', 'SGD', '+65', 'Southeast Asia', 'TRANSIT_HUB', 'ACTIVE'),
+                ('CTY-006', 'United States', 'US', 'USA', 'USD', '+1', 'North America', 'FDA_REGISTERED', 'ACTIVE'),
+                ('CTY-007', 'Saudi Arabia', 'SA', 'SAU', 'SAR', '+966', 'Middle East', 'SASO_COMPLIANT', 'ACTIVE'),
+                ('CTY-008', 'Netherlands', 'NL', 'NLD', 'EUR', '+31', 'European Union', 'ROTTERDAM_GATEWAY', 'ACTIVE'),
+                ('CTY-009', 'Japan', 'JP', 'JPN', 'JPY', '+81', 'East Asia', 'JAS_ORGANIC', 'ACTIVE'),
+                ('CTY-010', 'Egypt', 'EG', 'EGY', 'EGP', '+20', 'North Africa', 'SUEZ_CONVOY', 'ACTIVE'),
+                ('CTY-011', 'China', 'CN', 'CHN', 'CNY', '+86', 'East Asia', 'CIQ_INSPECTION', 'ACTIVE'),
+                ('CTY-012', 'United Kingdom', 'GB', 'GBR', 'GBP', '+44', 'Europe', 'UKCA_COMPLIANT', 'ACTIVE'),
+            ]
+            for ct in countries:
+                db_manager.execute_write(
+                    "INSERT INTO admin_countries (id, name, code, iso3, currency, phone_code, region, customs_status, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    list(ct)
+                )
+
     except Exception as e:
         logger.error(f"Error seeding database: {e}")
         raise e

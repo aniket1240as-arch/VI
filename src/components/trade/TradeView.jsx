@@ -12,6 +12,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import api from '../../services/api';
+import DataTable from '../common/DataTable';
 
 // ─── Fallback Data ────────────────────────────────────────────────────────────
 const FALLBACK_CONTRACTS = [
@@ -204,8 +205,12 @@ function ShipmentModal({ onClose, onSave }) {
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
-export default function TradeView({ type = 'export' }) {
-  const [activeTab, setActiveTab]       = useState('CONTRACTS');
+export default function TradeView({ type = 'export', initialTab = 'CONTRACTS' }) {
+  const [activeTab, setActiveTab]       = useState(initialTab || 'CONTRACTS');
+
+  useEffect(() => {
+    if (initialTab) setActiveTab(initialTab);
+  }, [initialTab]);
   const [contracts, setContracts]       = useState(FALLBACK_CONTRACTS);
   const [shipments, setShipments]       = useState(FALLBACK_SHIPMENTS);
   const [containers, setContainers]     = useState(FALLBACK_CONTAINERS);
@@ -452,165 +457,200 @@ export default function TradeView({ type = 'export' }) {
 
         {/* ── CONTRACTS TABLE ─────────────────────────────────────────────── */}
         {activeTab === 'CONTRACTS' && (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-700">
-              <thead className="bg-[#FAFAFA] border-b border-[#E2E8F0] text-[11px] font-bold uppercase tracking-wider text-slate-600">
-                <tr>
-                  <th className="py-3 px-4">Contract No</th>
-                  <th className="py-3 px-4">Partner</th>
-                  <th className="py-3 px-4">Commodity</th>
-                  <th className="py-3 px-4 text-right">Volume (CBM)</th>
-                  <th className="py-3 px-4 text-right">Volume (MT)</th>
-                  <th className="py-3 px-4 text-right">Value (USD)</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 font-medium">
-                {contracts.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="py-10 text-center text-slate-400 text-xs">No contracts found.</td>
-                  </tr>
-                ) : (
-                  contracts.map(c => (
-                    <tr key={c.id} className="hover:bg-blue-50/40 transition-colors">
-                      <td className="py-3 px-4 font-bold text-[#1E40AF] whitespace-nowrap font-mono">{c.contract_no}</td>
-                      <td className="py-3 px-4 font-semibold text-slate-900 whitespace-nowrap">{c.partner_name}</td>
-                      <td className="py-3 px-4 whitespace-nowrap">{c.commodity}</td>
-                      <td className="py-3 px-4 text-right whitespace-nowrap font-mono">{fmt(c.volume_cbm)}</td>
-                      <td className="py-3 px-4 text-right whitespace-nowrap font-mono">{fmt(c.volume_mt)}</td>
-                      <td className="py-3 px-4 text-right whitespace-nowrap font-bold text-slate-900">{fmtUSD(c.total_usd)}</td>
-                      <td className="py-3 px-4 whitespace-nowrap">
-                        <StatusBadge status={c.status} styleMap={CONTRACT_STATUS_STYLES} />
-                      </td>
-                      <td className="py-3 px-4 whitespace-nowrap">
-                        <button
-                          onClick={() => notify('success', `Viewing contract ${c.contract_no}`)}
-                          className="text-[#1E40AF] hover:underline text-[10px] font-bold"
-                        >
-                          VIEW
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            className="border-0 shadow-none rounded-t-none"
+            columns={[
+              {
+                key: 'contract_no',
+                header: 'CONTRACT NO',
+                render: (val) => <span className="font-mono font-bold text-[#1E40AF]">{val}</span>
+              },
+              {
+                key: 'partner_name',
+                header: 'TRADE PARTNER',
+                render: (val) => <strong className="text-slate-900">{val}</strong>
+              },
+              {
+                key: 'commodity',
+                header: 'COMMODITY',
+                render: (val) => <span className="text-slate-700">{val}</span>
+              },
+              {
+                key: 'volume_cbm',
+                header: 'VOLUME (CBM)',
+                align: 'right',
+                render: (val) => <span className="font-mono text-slate-700">{fmt(val)}</span>
+              },
+              {
+                key: 'volume_mt',
+                header: 'VOLUME (MT)',
+                align: 'right',
+                render: (val) => <span className="font-mono font-semibold text-slate-800">{fmt(val)}</span>
+              },
+              {
+                key: 'total_usd',
+                header: 'VALUE (USD)',
+                align: 'right',
+                render: (val) => <span className="font-mono font-black text-slate-900">{fmtUSD(val)}</span>
+              },
+              {
+                key: 'status',
+                header: 'STATUS',
+                render: (val) => <StatusBadge status={val} styleMap={CONTRACT_STATUS_STYLES} />
+              },
+              {
+                key: 'actions',
+                header: 'ACTIONS',
+                sortable: false,
+                render: (_, c) => (
+                  <button
+                    onClick={() => notify('success', `Viewing trade contract ${c.contract_no}`)}
+                    className="text-[#1E40AF] hover:underline text-[11px] font-bold tracking-wider"
+                  >
+                    VIEW
+                  </button>
+                )
+              }
+            ]}
+            data={contracts}
+            title={`${pageTitle}_Contracts`}
+            searchPlaceholder="Search contract #, partner, commodity..."
+            onAdd={() => setShowContractModal(true)}
+            addLabel="+ New Contract"
+          />
         )}
 
         {/* ── SHIPMENTS TABLE ─────────────────────────────────────────────── */}
         {activeTab === 'SHIPMENTS' && (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-700">
-              <thead className="bg-[#FAFAFA] border-b border-[#E2E8F0] text-[11px] font-bold uppercase tracking-wider text-slate-600">
-                <tr>
-                  <th className="py-3 px-4">Shipment No</th>
-                  <th className="py-3 px-4">BL No</th>
-                  <th className="py-3 px-4">Carrier</th>
-                  <th className="py-3 px-4">Port of Loading</th>
-                  <th className="py-3 px-4">Port of Discharge</th>
-                  <th className="py-3 px-4">ETD</th>
-                  <th className="py-3 px-4">ETA</th>
-                  <th className="py-3 px-4 text-center">Containers</th>
-                  <th className="py-3 px-4">Customs Status</th>
-                  <th className="py-3 px-4">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 font-medium">
-                {shipments.length === 0 ? (
-                  <tr>
-                    <td colSpan={10} className="py-10 text-center text-slate-400 text-xs">No shipments found.</td>
-                  </tr>
-                ) : (
-                  shipments.map(s => (
-                    <tr key={s.id} className="hover:bg-blue-50/40 transition-colors">
-                      <td className="py-3 px-4 font-bold text-[#1E40AF] whitespace-nowrap font-mono">{s.shipment_no}</td>
-                      <td className="py-3 px-4 font-mono whitespace-nowrap text-slate-700">{s.bl_no}</td>
-                      <td className="py-3 px-4 whitespace-nowrap font-semibold text-slate-900">{s.carrier}</td>
-                      <td className="py-3 px-4 whitespace-nowrap">{s.port_of_loading}</td>
-                      <td className="py-3 px-4 whitespace-nowrap">{s.port_of_discharge}</td>
-                      <td className="py-3 px-4 whitespace-nowrap font-mono text-slate-500">{s.etd}</td>
-                      <td className="py-3 px-4 whitespace-nowrap font-mono text-slate-500">{s.eta}</td>
-                      <td className="py-3 px-4 text-center font-bold">{s.container_count} FCL</td>
-                      <td className="py-3 px-4 whitespace-nowrap">
-                        <StatusBadge status={s.customs_status || s.status || 'BOOKED'} styleMap={SHIPMENT_STATUS_STYLES} />
-                      </td>
-                      <td className="py-3 px-4 whitespace-nowrap">
-                        <button
-                          onClick={() => notify('success', `Tracking shipment ${s.shipment_no}`)}
-                          className="text-[#1E40AF] hover:underline text-[10px] font-bold"
-                        >
-                          TRACK
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            className="border-0 shadow-none rounded-t-none"
+            columns={[
+              {
+                key: 'shipment_no',
+                header: 'SHIPMENT NO',
+                render: (val) => <span className="font-mono font-bold text-[#1E40AF]">{val}</span>
+              },
+              {
+                key: 'bl_no',
+                header: 'BL MANIFEST',
+                render: (val) => <span className="font-mono font-semibold text-slate-700">{val}</span>
+              },
+              {
+                key: 'carrier',
+                header: 'CARRIER VESSEL',
+                render: (val) => <strong className="text-slate-800">{val}</strong>
+              },
+              {
+                key: 'port_of_loading',
+                header: 'PORT OF LOADING',
+                render: (val) => <span className="text-slate-600 text-xs">{val}</span>
+              },
+              {
+                key: 'port_of_discharge',
+                header: 'DISCHARGE PORT',
+                render: (val) => <span className="text-slate-600 text-xs">{val}</span>
+              },
+              {
+                key: 'etd',
+                header: 'ETD',
+                render: (val) => <span className="font-mono text-slate-500">{val}</span>
+              },
+              {
+                key: 'eta',
+                header: 'ETA',
+                render: (val) => <span className="font-mono text-slate-500">{val}</span>
+              },
+              {
+                key: 'container_count',
+                header: 'CONTAINERS',
+                align: 'center',
+                render: (val) => <span className="font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded">{val} FCL</span>
+              },
+              {
+                key: 'customs_status',
+                header: 'STATUS',
+                render: (val, row) => <StatusBadge status={val || row.status || 'BOOKED'} styleMap={SHIPMENT_STATUS_STYLES} />
+              },
+              {
+                key: 'actions',
+                header: 'ACTIONS',
+                sortable: false,
+                render: (_, s) => (
+                  <button
+                    onClick={() => notify('success', `Tracking container shipment ${s.shipment_no}`)}
+                    className="text-[#1E40AF] hover:underline text-[11px] font-bold tracking-wider"
+                  >
+                    TRACK
+                  </button>
+                )
+              }
+            ]}
+            data={shipments}
+            title={`${pageTitle}_Shipments`}
+            searchPlaceholder="Search shipment #, BL, carrier, port..."
+            onAdd={() => setShowShipmentModal(true)}
+            addLabel="+ New Shipment"
+          />
         )}
 
         {/* ── CONTAINERS TABLE ────────────────────────────────────────────── */}
         {activeTab === 'CONTAINERS' && (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-700">
-              <thead className="bg-[#FAFAFA] border-b border-[#E2E8F0] text-[11px] font-bold uppercase tracking-wider text-slate-600">
-                <tr>
-                  <th className="py-3 px-4">Container No</th>
-                  <th className="py-3 px-4">Seal No</th>
-                  <th className="py-3 px-4">Commodity</th>
-                  <th className="py-3 px-4 text-right">Gross KG</th>
-                  <th className="py-3 px-4 text-right">Net KG</th>
-                  <th className="py-3 px-4 text-center">Temp (°C)</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4">Last Updated</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 font-medium">
-                {containers.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="py-10 text-center text-slate-400 text-xs">No containers found.</td>
-                  </tr>
-                ) : (
-                  containers.map(c => (
-                    <tr key={c.id} className="hover:bg-blue-50/40 transition-colors">
-                      <td className="py-3 px-4 font-bold text-[#1E40AF] whitespace-nowrap font-mono">{c.container_no}</td>
-                      <td className="py-3 px-4 font-mono whitespace-nowrap text-slate-600">{c.seal_no}</td>
-                      <td className="py-3 px-4 whitespace-nowrap">{c.commodity}</td>
-                      <td className="py-3 px-4 text-right font-mono whitespace-nowrap">{fmt(c.gross_weight_kg)}</td>
-                      <td className="py-3 px-4 text-right font-mono whitespace-nowrap">{fmt(c.net_weight_kg)}</td>
-                      <td className="py-3 px-4 text-center font-semibold">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${c.temperature_c <= 20 ? 'bg-blue-100 text-blue-800' : c.temperature_c <= 25 ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
-                          {c.temperature_c}°C
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 whitespace-nowrap">
-                        <StatusBadge status={c.status} styleMap={CONTAINER_STATUS_STYLES} />
-                      </td>
-                      <td className="py-3 px-4 text-slate-400 whitespace-nowrap font-mono text-[10px]">
-                        {c.updated_at ? new Date(c.updated_at).toLocaleDateString() : 'Oct 2026'}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            className="border-0 shadow-none rounded-t-none"
+            columns={[
+              {
+                key: 'container_no',
+                header: 'CONTAINER NO',
+                render: (val) => <span className="font-mono font-bold text-[#1E40AF]">{val}</span>
+              },
+              {
+                key: 'seal_no',
+                header: 'SEAL NO',
+                render: (val) => <span className="font-mono text-slate-600">{val}</span>
+              },
+              {
+                key: 'commodity',
+                header: 'COMMODITY',
+                render: (val) => <span className="text-slate-800 font-medium">{val}</span>
+              },
+              {
+                key: 'gross_weight_kg',
+                header: 'GROSS WT (KG)',
+                align: 'right',
+                render: (val) => <span className="font-mono font-semibold text-slate-800">{val ? val.toLocaleString() : '-'}</span>
+              },
+              {
+                key: 'net_weight_kg',
+                header: 'NET WT (KG)',
+                align: 'right',
+                render: (val) => <span className="font-mono font-bold text-slate-900">{val ? val.toLocaleString() : '-'}</span>
+              },
+              {
+                key: 'temperature_c',
+                header: 'TEMP (°C)',
+                align: 'center',
+                render: (val) => val != null ? (
+                  <span className={`font-mono font-bold px-2 py-0.5 rounded text-[10px] ${val <= 20 ? 'bg-blue-100 text-blue-800' : val <= 25 ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
+                    {val}°C
+                  </span>
+                ) : '—'
+              },
+              {
+                key: 'status',
+                header: 'STATUS',
+                render: (val) => <StatusBadge status={val} styleMap={CONTAINER_STATUS_STYLES} />
+              },
+              {
+                key: 'updated_at',
+                header: 'UPDATED',
+                render: (val) => <span className="font-mono text-slate-400 text-[10px]">{val ? new Date(val).toLocaleDateString() : 'Oct 2026'}</span>
+              }
+            ]}
+            data={containers}
+            title={`${pageTitle}_Containers`}
+            searchPlaceholder="Search container #, seal #, commodity..."
+          />
         )}
-
-        {/* Table Footer */}
-        <div className="px-4 py-2.5 border-t border-[#E2E8F0] bg-[#FAFAFA] flex items-center justify-between">
-          <span className="text-[11px] text-slate-400 font-medium">
-            {activeTab === 'CONTRACTS'  && `${contracts.length} contract${contracts.length !== 1 ? 's' : ''}`}
-            {activeTab === 'SHIPMENTS'  && `${shipments.length} shipment${shipments.length !== 1 ? 's' : ''}`}
-            {activeTab === 'CONTAINERS' && `${containers.length} container${containers.length !== 1 ? 's' : ''}`}
-          </span>
-          <span className="text-[11px] text-slate-400">
-            {type === 'export' ? 'Export Operations' : type === 'import' ? 'Raw Procurement' : 'Trade Transactions'}
-          </span>
-        </div>
       </div>
     </div>
   );

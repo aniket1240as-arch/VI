@@ -168,16 +168,52 @@ CREATE TABLE IF NOT EXISTS calendar_events (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Asset Types (Live System Reverse Engineered)
+CREATE TABLE IF NOT EXISTS asset_types (
+    id VARCHAR PRIMARY KEY,
+    name VARCHAR UNIQUE NOT NULL,
+    status VARCHAR DEFAULT 'ACTIVE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Assets Master & Tracking (Live System Reverse Engineered)
+CREATE TABLE IF NOT EXISTS assets (
+    id VARCHAR PRIMARY KEY,
+    code VARCHAR UNIQUE NOT NULL,
+    name VARCHAR NOT NULL,
+    type_name VARCHAR NOT NULL,
+    type_id VARCHAR,
+    assigned_to VARCHAR,
+    branch VARCHAR DEFAULT 'Hanoi HQ',
+    brand VARCHAR,
+    model VARCHAR,
+    serial_no VARCHAR,
+    purchase_date VARCHAR,
+    expiry_date VARCHAR,
+    depreciation_rate DOUBLE DEFAULT 10.0,
+    cost DOUBLE DEFAULT 0.0,
+    status VARCHAR DEFAULT 'ACTIVE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
 -- Workspace Task / TODO Planner
 CREATE TABLE IF NOT EXISTS workspace_tasks (
     id VARCHAR PRIMARY KEY,
     title VARCHAR NOT NULL,
+    description VARCHAR,
     category VARCHAR NOT NULL,
     priority VARCHAR DEFAULT 'MEDIUM', -- LOW, MEDIUM, HIGH, URGENT
+    status VARCHAR DEFAULT 'ASSIGNED', -- ASSIGNED, IN_PROGRESS, ON_HOLD, COMPLETED, CLOSED
     due_date VARCHAR,
     assigned_to VARCHAR,
+    assigned_by VARCHAR DEFAULT 'Admin (Executive)',
+    hold_reason VARCHAR,
+    hold_comments VARCHAR,
+    resolution_notes VARCHAR,
     completed BOOLEAN DEFAULT FALSE,
     notes VARCHAR,
+    activity_log VARCHAR,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -299,6 +335,35 @@ CREATE TABLE IF NOT EXISTS job_requisitions (
     created_by VARCHAR DEFAULT 'admin',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Asset Types (Live System Reverse Engineered)
+CREATE TABLE IF NOT EXISTS asset_types (
+    id VARCHAR PRIMARY KEY,
+    name VARCHAR UNIQUE NOT NULL,
+    status VARCHAR DEFAULT 'ACTIVE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Assets Master & Tracking (Live System Reverse Engineered)
+CREATE TABLE IF NOT EXISTS assets (
+    id VARCHAR PRIMARY KEY,
+    code VARCHAR UNIQUE NOT NULL,
+    name VARCHAR NOT NULL,
+    type_name VARCHAR NOT NULL,
+    type_id VARCHAR,
+    assigned_to VARCHAR,
+    branch VARCHAR DEFAULT 'Hanoi HQ',
+    brand VARCHAR,
+    model VARCHAR,
+    serial_no VARCHAR,
+    purchase_date VARCHAR,
+    expiry_date VARCHAR,
+    depreciation_rate DOUBLE DEFAULT 10.0,
+    cost DOUBLE DEFAULT 0.0,
+    status VARCHAR DEFAULT 'ACTIVE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 
 -- Recruitment: Candidates
 CREATE TABLE IF NOT EXISTS candidates (
@@ -518,6 +583,35 @@ CREATE TABLE IF NOT EXISTS goods_receipt_notes (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Asset Types (Live System Reverse Engineered)
+CREATE TABLE IF NOT EXISTS asset_types (
+    id VARCHAR PRIMARY KEY,
+    name VARCHAR UNIQUE NOT NULL,
+    status VARCHAR DEFAULT 'ACTIVE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Assets Master & Tracking (Live System Reverse Engineered)
+CREATE TABLE IF NOT EXISTS assets (
+    id VARCHAR PRIMARY KEY,
+    code VARCHAR UNIQUE NOT NULL,
+    name VARCHAR NOT NULL,
+    type_name VARCHAR NOT NULL,
+    type_id VARCHAR,
+    assigned_to VARCHAR,
+    branch VARCHAR DEFAULT 'Hanoi HQ',
+    brand VARCHAR,
+    model VARCHAR,
+    serial_no VARCHAR,
+    purchase_date VARCHAR,
+    expiry_date VARCHAR,
+    depreciation_rate DOUBLE DEFAULT 10.0,
+    cost DOUBLE DEFAULT 0.0,
+    status VARCHAR DEFAULT 'ACTIVE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
 -- GRN Line Items
 CREATE TABLE IF NOT EXISTS grn_items (
     id VARCHAR PRIMARY KEY,
@@ -620,6 +714,35 @@ CREATE TABLE IF NOT EXISTS journal_entries (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Asset Types (Live System Reverse Engineered)
+CREATE TABLE IF NOT EXISTS asset_types (
+    id VARCHAR PRIMARY KEY,
+    name VARCHAR UNIQUE NOT NULL,
+    status VARCHAR DEFAULT 'ACTIVE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Assets Master & Tracking (Live System Reverse Engineered)
+CREATE TABLE IF NOT EXISTS assets (
+    id VARCHAR PRIMARY KEY,
+    code VARCHAR UNIQUE NOT NULL,
+    name VARCHAR NOT NULL,
+    type_name VARCHAR NOT NULL,
+    type_id VARCHAR,
+    assigned_to VARCHAR,
+    branch VARCHAR DEFAULT 'Hanoi HQ',
+    brand VARCHAR,
+    model VARCHAR,
+    serial_no VARCHAR,
+    purchase_date VARCHAR,
+    expiry_date VARCHAR,
+    depreciation_rate DOUBLE DEFAULT 10.0,
+    cost DOUBLE DEFAULT 0.0,
+    status VARCHAR DEFAULT 'ACTIVE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
 -- Sales Invoices
 CREATE TABLE IF NOT EXISTS sales_invoices (
     id VARCHAR PRIMARY KEY,
@@ -643,6 +766,35 @@ CREATE TABLE IF NOT EXISTS sales_invoices (
     created_by VARCHAR DEFAULT 'admin',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Asset Types (Live System Reverse Engineered)
+CREATE TABLE IF NOT EXISTS asset_types (
+    id VARCHAR PRIMARY KEY,
+    name VARCHAR UNIQUE NOT NULL,
+    status VARCHAR DEFAULT 'ACTIVE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Assets Master & Tracking (Live System Reverse Engineered)
+CREATE TABLE IF NOT EXISTS assets (
+    id VARCHAR PRIMARY KEY,
+    code VARCHAR UNIQUE NOT NULL,
+    name VARCHAR NOT NULL,
+    type_name VARCHAR NOT NULL,
+    type_id VARCHAR,
+    assigned_to VARCHAR,
+    branch VARCHAR DEFAULT 'Hanoi HQ',
+    brand VARCHAR,
+    model VARCHAR,
+    serial_no VARCHAR,
+    purchase_date VARCHAR,
+    expiry_date VARCHAR,
+    depreciation_rate DOUBLE DEFAULT 10.0,
+    cost DOUBLE DEFAULT 0.0,
+    status VARCHAR DEFAULT 'ACTIVE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 
 -- Sales Invoice Line Items
 CREATE TABLE IF NOT EXISTS invoice_items (
@@ -681,6 +833,356 @@ CREATE TABLE IF NOT EXISTS payment_entries (
     created_by VARCHAR DEFAULT 'admin',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Asset Types (Live System Reverse Engineered)
+CREATE TABLE IF NOT EXISTS asset_types (
+    id VARCHAR PRIMARY KEY,
+    name VARCHAR UNIQUE NOT NULL,
+    status VARCHAR DEFAULT 'ACTIVE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Assets Master & Tracking (Live System Reverse Engineered)
+CREATE TABLE IF NOT EXISTS assets (
+    id VARCHAR PRIMARY KEY,
+    code VARCHAR UNIQUE NOT NULL,
+    name VARCHAR NOT NULL,
+    type_name VARCHAR NOT NULL,
+    type_id VARCHAR,
+    assigned_to VARCHAR,
+    branch VARCHAR DEFAULT 'Hanoi HQ',
+    brand VARCHAR,
+    model VARCHAR,
+    serial_no VARCHAR,
+    purchase_date VARCHAR,
+    expiry_date VARCHAR,
+    depreciation_rate DOUBLE DEFAULT 10.0,
+    cost DOUBLE DEFAULT 0.0,
+    status VARCHAR DEFAULT 'ACTIVE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+-- Extended System Masters (Live System Reverse Engineered)
+CREATE TABLE IF NOT EXISTS admin_banks (
+    id VARCHAR PRIMARY KEY,
+    short_name VARCHAR NOT NULL,
+    bank_name VARCHAR NOT NULL,
+    account_name VARCHAR,
+    account_no VARCHAR,
+    currency VARCHAR DEFAULT 'USD',
+    branch VARCHAR DEFAULT 'IV INT - HN',
+    swift_code VARCHAR,
+    ifsc_code VARCHAR,
+    iban VARCHAR,
+    status VARCHAR DEFAULT 'ACTIVE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS admin_qc_parties (
+    id VARCHAR PRIMARY KEY,
+    name VARCHAR NOT NULL,
+    email VARCHAR,
+    phone VARCHAR,
+    address VARCHAR,
+    city VARCHAR,
+    state VARCHAR,
+    country VARCHAR DEFAULT 'INDIA',
+    pincode VARCHAR,
+    pan_no VARCHAR,
+    status VARCHAR DEFAULT 'ACTIVE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS admin_notify_parties (
+    id VARCHAR PRIMARY KEY,
+    name VARCHAR NOT NULL,
+    email VARCHAR,
+    phone VARCHAR,
+    address VARCHAR,
+    city VARCHAR,
+    state VARCHAR,
+    country VARCHAR DEFAULT 'VIETNAM',
+    pincode VARCHAR,
+    province VARCHAR DEFAULT 'N/A',
+    status VARCHAR DEFAULT 'ACTIVE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS admin_ports (
+    id VARCHAR PRIMARY KEY,
+    name VARCHAR NOT NULL,
+    short_name VARCHAR,
+    code VARCHAR NOT NULL,
+    country VARCHAR NOT NULL,
+    remark VARCHAR,
+    status VARCHAR DEFAULT 'ACTIVE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS admin_payees (
+    id VARCHAR PRIMARY KEY,
+    name VARCHAR NOT NULL,
+    phone VARCHAR,
+    branch VARCHAR DEFAULT 'IV INT - HN',
+    status VARCHAR DEFAULT 'ACTIVE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+-- ─────────────────────────────────────────────────────────────
+-- Warehouse & Inventory (Live System Reverse Engineered)
+-- ─────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS admin_company_profiles (
+    id VARCHAR PRIMARY KEY,
+    code VARCHAR UNIQUE NOT NULL,
+    name_en VARCHAR NOT NULL,
+    name_vi VARCHAR,
+    address_en VARCHAR,
+    address_vi VARCHAR,
+    phone VARCHAR,
+    email VARCHAR,
+    logo_url VARCHAR,
+    signature_url VARCHAR,
+    favicon_url VARCHAR,
+    status VARCHAR DEFAULT 'ACTIVE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS admin_branches (
+    id VARCHAR PRIMARY KEY,
+    code VARCHAR UNIQUE NOT NULL,
+    name VARCHAR NOT NULL,
+    phone VARCHAR,
+    email VARCHAR,
+    address VARCHAR,
+    country VARCHAR DEFAULT 'VIETNAM',
+    state VARCHAR,
+    city VARCHAR,
+    pincode VARCHAR,
+    currency VARCHAR DEFAULT 'VND',
+    cash_balance DOUBLE DEFAULT 0.0,
+    status VARCHAR DEFAULT 'ACTIVE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS admin_master_warehouses (
+    id VARCHAR PRIMARY KEY,
+    name VARCHAR NOT NULL,
+    location VARCHAR NOT NULL,
+    status VARCHAR DEFAULT 'ACTIVE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS admin_master_locations (
+    id VARCHAR PRIMARY KEY,
+    name VARCHAR NOT NULL,
+    warehouse_name VARCHAR NOT NULL,
+    remark VARCHAR,
+    status VARCHAR DEFAULT 'ACTIVE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS admin_expense_categories (
+    id VARCHAR PRIMARY KEY,
+    expense_type VARCHAR NOT NULL,
+    name VARCHAR NOT NULL,
+    group_name VARCHAR,
+    remark VARCHAR,
+    status VARCHAR DEFAULT 'ACTIVE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS admin_vendors (
+    id VARCHAR PRIMARY KEY,
+    code VARCHAR UNIQUE NOT NULL,
+    name VARCHAR NOT NULL,
+    short_name VARCHAR,
+    phone VARCHAR,
+    email VARCHAR,
+    address VARCHAR,
+    country VARCHAR DEFAULT 'VIETNAM',
+    state VARCHAR,
+    city VARCHAR,
+    pincode VARCHAR,
+    status VARCHAR DEFAULT 'ACTIVE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS admin_global_settings (
+    id VARCHAR PRIMARY KEY,
+    setting_type VARCHAR NOT NULL,
+    setting_key VARCHAR NOT NULL,
+    setting_value VARCHAR NOT NULL,
+    status VARCHAR DEFAULT 'ACTIVE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS admin_common_pages (
+    id VARCHAR PRIMARY KEY,
+    name VARCHAR NOT NULL,
+    page_key VARCHAR NOT NULL,
+    page_type VARCHAR NOT NULL,
+    details VARCHAR,
+    status VARCHAR DEFAULT 'ACTIVE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS admin_access_logs (
+    id VARCHAR PRIMARY KEY,
+    date_time VARCHAR NOT NULL,
+    user_name VARCHAR NOT NULL,
+    model_name VARCHAR NOT NULL,
+    event VARCHAR NOT NULL,
+    url VARCHAR NOT NULL,
+    ip_address VARCHAR DEFAULT '127.0.0.1',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS warehouse_inventory (
+    id VARCHAR PRIMARY KEY,
+    item_code VARCHAR UNIQUE NOT NULL,
+    item_name VARCHAR NOT NULL,
+    category VARCHAR NOT NULL,
+    warehouse_name VARCHAR NOT NULL,
+    stock_mt DOUBLE DEFAULT 0.0,
+    allocated_mt DOUBLE DEFAULT 0.0,
+    available_mt DOUBLE DEFAULT 0.0,
+    reorder_level_mt DOUBLE DEFAULT 5.0,
+    unit_cost_usd DOUBLE DEFAULT 0.0,
+    status VARCHAR DEFAULT 'IN_STOCK',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS warehouse_transactions (
+    id VARCHAR PRIMARY KEY,
+    transaction_no VARCHAR UNIQUE NOT NULL,
+    transaction_type VARCHAR NOT NULL, -- 'STOCK_IN', 'WH_DELIVERY', 'WH_RETURN', 'WH_NOTE'
+    item_code VARCHAR NOT NULL,
+    item_name VARCHAR NOT NULL,
+    warehouse_name VARCHAR NOT NULL,
+    quantity_mt DOUBLE DEFAULT 0.0,
+    reference_order_no VARCHAR,
+    partner_name VARCHAR,
+    driver_truck_no VARCHAR,
+    date VARCHAR NOT NULL,
+    remarks VARCHAR,
+    status VARCHAR DEFAULT 'COMPLETED',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS warehouse_damage_logs (
+    id VARCHAR PRIMARY KEY,
+    log_no VARCHAR UNIQUE NOT NULL,
+    log_type VARCHAR NOT NULL, -- 'DAMAGE', 'WEIGHT_LOSS'
+    item_code VARCHAR NOT NULL,
+    item_name VARCHAR NOT NULL,
+    warehouse_name VARCHAR NOT NULL,
+    loss_mt DOUBLE DEFAULT 0.0,
+    reason VARCHAR NOT NULL,
+    date VARCHAR NOT NULL,
+    inspection_officer VARCHAR,
+    status VARCHAR DEFAULT 'CONFIRMED',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ─────────────────────────────────────────────────────────────
+-- Order Execution & Operations (Live System Reverse Engineered)
+-- ─────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS order_executions (
+    id VARCHAR PRIMARY KEY,
+    po_no VARCHAR UNIQUE NOT NULL,
+    date VARCHAR NOT NULL,
+    supplier_name VARCHAR NOT NULL,
+    purchase_manager VARCHAR NOT NULL,
+    contract_no VARCHAR NOT NULL,
+    quantity_mt DOUBLE DEFAULT 0.0,
+    total_amount DOUBLE DEFAULT 0.0,
+    currency VARCHAR DEFAULT 'USD',
+    execution_status VARCHAR DEFAULT 'PENDING', -- 'PENDING', 'IN_PROCESS', 'COMPLETED'
+    container_no VARCHAR,
+    bl_no VARCHAR,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS document_submissions (
+    id VARCHAR PRIMARY KEY,
+    submission_no VARCHAR UNIQUE NOT NULL,
+    date VARCHAR NOT NULL,
+    ref_no VARCHAR NOT NULL,
+    contract_no VARCHAR NOT NULL,
+    supplier_name VARCHAR NOT NULL,
+    document_types VARCHAR, -- 'Bill of Lading, Phytosanitary, Certificate of Origin'
+    status VARCHAR DEFAULT 'SUBMITTED', -- 'SUBMITTED', 'VERIFIED', 'REJECTED'
+    reviewer VARCHAR,
+    remarks VARCHAR,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS delivery_claims (
+    id VARCHAR PRIMARY KEY,
+    claim_no VARCHAR UNIQUE NOT NULL,
+    date VARCHAR NOT NULL,
+    delivery_ref VARCHAR NOT NULL,
+    customer_name VARCHAR NOT NULL,
+    claim_amount DOUBLE DEFAULT 0.0,
+    currency VARCHAR DEFAULT 'USD',
+    reason VARCHAR NOT NULL,
+    status VARCHAR DEFAULT 'UNDER_REVIEW', -- 'UNDER_REVIEW', 'APPROVED', 'SETTLED'
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ─────────────────────────────────────────────────────────────
+-- Commercial Finance: Debit & Credit Notes (Live System)
+-- ─────────────────────────────────────────────────────────────
+
+-- ─────────────────────────────────────────────────────────────
+-- Extended Masters: Transporters & Countries (Live System)
+-- ─────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS admin_transporters (
+    id VARCHAR PRIMARY KEY,
+    code VARCHAR UNIQUE NOT NULL,
+    name VARCHAR NOT NULL,
+    contact_person VARCHAR,
+    phone VARCHAR,
+    email VARCHAR,
+    fleet_type VARCHAR DEFAULT 'Container Trailer (20ft/40ft)',
+    fleet_size INTEGER DEFAULT 10,
+    hub VARCHAR DEFAULT 'Hai Phong Port Depot',
+    address VARCHAR,
+    status VARCHAR DEFAULT 'ACTIVE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS admin_countries (
+    id VARCHAR PRIMARY KEY,
+    name VARCHAR NOT NULL,
+    code VARCHAR(2) UNIQUE NOT NULL,
+    iso3 VARCHAR(3) UNIQUE NOT NULL,
+    currency VARCHAR(10) NOT NULL,
+    phone_code VARCHAR(10),
+    region VARCHAR,
+    customs_status VARCHAR DEFAULT 'COMPLIANT',
+    status VARCHAR DEFAULT 'ACTIVE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS debit_credit_notes (
+    id VARCHAR PRIMARY KEY,
+    note_no VARCHAR UNIQUE NOT NULL,
+    note_type VARCHAR NOT NULL, -- 'DEBIT_NOTE', 'CREDIT_NOTE'
+    date VARCHAR NOT NULL,
+    party_type VARCHAR NOT NULL, -- 'BUYER', 'SUPPLIER'
+    party_name VARCHAR NOT NULL,
+    invoice_ref VARCHAR,
+    amount DOUBLE DEFAULT 0.0,
+    currency VARCHAR DEFAULT 'USD',
+    reason VARCHAR NOT NULL,
+    payment_status VARCHAR DEFAULT 'UNSETTLED', -- 'UNSETTLED', 'PARTIALLY_SETTLED', 'SETTLED'
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 """
 
 def init_db_schema():

@@ -6,6 +6,10 @@ import {
   Download, Printer, X
 } from 'lucide-react';
 import api from '../../services/api';
+import DataTable from '../common/DataTable';
+import DebitCreditNotesView from './DebitCreditNotesView';
+import BuyerAgingReportView from './BuyerAgingReportView';
+
 
 const STATUS_COLORS = {
   DRAFT: 'bg-slate-100 text-slate-700',
@@ -29,8 +33,12 @@ const ACCOUNT_TYPE_COLORS = {
   Expense: 'text-rose-600 bg-rose-50 border-rose-200',
 };
 
-export default function FinanceView() {
-  const [activeSubTab, setActiveSubTab] = useState('dashboard');
+export default function FinanceView({ initialSubTab = 'dashboard' }) {
+  const [activeSubTab, setActiveSubTab] = useState(initialSubTab || 'dashboard');
+
+  useEffect(() => {
+    if (initialSubTab) setActiveSubTab(initialSubTab);
+  }, [initialSubTab]);
   const [salesOrders, setSalesOrders] = useState([]);
   const [invoices, setInvoices] = useState([]);
   const [accounts, setAccounts] = useState([]);
@@ -274,6 +282,8 @@ export default function FinanceView() {
     { id: 'dashboard', label: 'Financial Overview', icon: BarChart2 },
     { id: 'sales_orders', label: 'Sales Orders', icon: DollarSign },
     { id: 'invoices', label: 'Invoicing & AR', icon: Receipt },
+    { id: 'notes', label: 'Debit & Credit Notes', icon: Layers },
+    { id: 'buyer_aging', label: 'Buyer Aging Report', icon: TrendingUp },
     { id: 'general_ledger', label: 'Chart of Accounts & GL', icon: BookOpen },
     { id: 'payments', label: 'Payment Entries', icon: CreditCard },
   ];
@@ -336,6 +346,9 @@ export default function FinanceView() {
               onExportCsv={() => handleExportInvoiceCsv()}
             />
           )}
+
+          {activeSubTab === 'notes' && <DebitCreditNotesView />}
+          {activeSubTab === 'buyer_aging' && <BuyerAgingReportView />}
 
           {activeSubTab === 'general_ledger' && (
             <GeneralLedgerView
@@ -544,41 +557,256 @@ function SalesOrderList({ orders, onSelect, onStatusUpdate, onCreateNew, onViewP
 
   const filtered = filter === 'ALL' ? orders : orders.filter(o => o.status === filter);
 
+  const columns = [
+    {
+      key: 'so_number',
+      header: 'SO NUMBER',
+      render: (val, so) => (
+        <button onClick={() => onSelect(so)} className="text-xs font-bold text-[#1E40AF] hover:underline font-mono">
+          {val}
+        </button>
+      )
+    },
+    {
+      key: 'customer_name',
+      header: 'CUSTOMER',
+      render: (val) => <strong className="text-slate-800 text-xs">{val}</strong>
+    },
+    {
+      key: 'order_date',
+      header: 'ORDER DATE',
+      render: (val) => <span className="text-slate-600 text-xs font-mono">{val}</span>
+    },
+    {
+      key: 'incoterms',
+      header: 'INCOTERMS',
+      render: (val) => (
+        <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
+          {val}
+        </span>
+      )
+    },
+    {
+      key: 'payment_terms',
+      header: 'PAYMENT TERMS',
+      render: (val) => <span className="text-slate-600 text-xs">{val}</span>
+    },
+    {
+      key: 'grand_total',
+      header: 'TOTAL (USD)',
+      align: 'right',
+      render: (val) => <span className="font-mono font-bold text-slate-800 text-xs">${(val || 0).toLocaleString()}</span>
+    },
+    {
+      key: 'outstanding_amount',
+      header: 'BALANCE DUE',
+      align: 'right',
+      render: (val) => <span className="font-mono font-bold text-amber-600 text-xs">${(val || 0).toLocaleString()}</span>
+    },
+    {
+      key: 'status',
+      header: 'STATUS',
+      render: (val) => (
+        <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${STATUS_COLORS[val] || 'bg-slate-100'}`}>
+          {val?.replace(/_/g, ' ')}
+        </span>
+      )
+    },
+    {
+      key: 'actions',
+      header: 'ACTIONS',
+      sortable: false,
+      render: (_, so) => (
+        <div className="flex items-center space-x-1.5 flex-wrap gap-y-1">
+          {so.status === 'DRAFT' && (
+            <>
+              <button
+                onClick={() => onStatusUpdate(so.id, 'CONFIRMED')}
+                className="text-[10px] font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded transition whitespace-nowrap"
+                title="Confirm Order"
+              >
+                Confirm
+              </button>
+              <button
+                onClick={() => onStatusUpdate(so.id, 'CANCELLED')}
+                className="text-[10px] font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 px-2 py-1 rounded transition whitespace-nowrap"
+                title="Cancel Order"
+              >
+                Cancel
+              </button>
+            </>
+          )}
+          {so.status === 'CONFIRMED' && (
+            <>
+              <button
+                onClick={() => onStatusUpdate(so.id, 'FULLY_DELIVERED')}
+                className="text-[10px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded transition whitespace-nowrap"
+                title="Deliver Shipment"
+              >
+                Deliver
+              </button>
+              <button
+                onClick={() => onStatusUpdate(so.id, 'INVOICED')}
+                className="text-[10px] font-bold text-purple-600 bg-purple-50 hover:bg-purple-100 px-2 py-1 rounded transition whitespace-nowrap"
+                title="Direct to Invoiced"
+              >
+                Invoice
+              </button>
+              <button
+                onClick={() => onStatusUpdate(so.id, 'CANCELLED')}
+                className="text-[10px] font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 px-2 py-1 rounded transition whitespace-nowrap"
+                title="Cancel Order"
+              >
+                Cancel
+              </button>
+            </>
+          )}
+          {so.status === 'PARTIALLY_DELIVERED' && (
+            <>
+              <button
+                onClick={() => onStatusUpdate(so.id, 'FULLY_DELIVERED')}
+                className="text-[10px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded transition whitespace-nowrap"
+                title="Complete Delivery"
+              >
+                Full Deliver
+              </button>
+              <button
+                onClick={() => onStatusUpdate(so.id, 'INVOICED')}
+                className="text-[10px] font-bold text-purple-600 bg-purple-50 hover:bg-purple-100 px-2 py-1 rounded transition whitespace-nowrap"
+                title="Invoice Delivered"
+              >
+                Invoice
+              </button>
+            </>
+          )}
+          {so.status === 'FULLY_DELIVERED' && (
+            <>
+              <button
+                onClick={() => onStatusUpdate(so.id, 'INVOICED')}
+                className="text-[10px] font-bold text-purple-600 bg-purple-50 hover:bg-purple-100 px-2 py-1 rounded transition whitespace-nowrap"
+                title="Generate Commercial Invoice"
+              >
+                Invoice
+              </button>
+              <button
+                onClick={() => onStatusUpdate(so.id, 'PAID')}
+                className="text-[10px] font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-2 py-1 rounded transition whitespace-nowrap"
+                title="Direct Mark Paid"
+              >
+                Mark Paid
+              </button>
+            </>
+          )}
+          {so.status === 'INVOICED' && (
+            <>
+              <button
+                onClick={() => onStatusUpdate(so.id, 'PARTIALLY_PAID')}
+                className="text-[10px] font-bold text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 px-2 py-1 rounded transition whitespace-nowrap"
+                title="Record Partial Payment (50%)"
+              >
+                Partial Paid
+              </button>
+              <button
+                onClick={() => onStatusUpdate(so.id, 'PAID')}
+                className="text-[10px] font-bold text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-2 py-1 rounded transition whitespace-nowrap"
+                title="Record Full Settlement (100%)"
+              >
+                Mark Paid
+              </button>
+              <button
+                onClick={() => onStatusUpdate(so.id, 'CANCELLED')}
+                className="text-[10px] font-bold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-2 py-1 rounded transition whitespace-nowrap"
+                title="Cancel Order"
+              >
+                Cancel
+              </button>
+            </>
+          )}
+          {so.status === 'PARTIALLY_PAID' && (
+            <>
+              <button
+                onClick={() => onStatusUpdate(so.id, 'PAID')}
+                className="text-[10px] font-bold text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-2 py-1 rounded transition whitespace-nowrap"
+                title="Settle Balance & Mark Full Paid (100%)"
+              >
+                Mark Full Paid
+              </button>
+              <button
+                onClick={() => onStatusUpdate(so.id, 'CLOSED')}
+                className="text-[10px] font-bold text-slate-600 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded transition whitespace-nowrap"
+                title="Close Short Settlement"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => onStatusUpdate(so.id, 'CANCELLED')}
+                className="text-[10px] font-bold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-2 py-1 rounded transition whitespace-nowrap"
+                title="Cancel Balance"
+              >
+                Cancel
+              </button>
+            </>
+          )}
+          {so.status === 'PAID' && (
+            <button
+              onClick={() => onStatusUpdate(so.id, 'CLOSED')}
+              className="text-[10px] font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-2 py-1 rounded transition whitespace-nowrap"
+              title="Close Completed Order"
+            >
+              Close
+            </button>
+          )}
+          {so.status === 'CLOSED' && (
+            <button
+              onClick={() => onStatusUpdate(so.id, 'DRAFT')}
+              className="text-[10px] font-bold text-slate-600 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded transition whitespace-nowrap"
+              title="Reopen Order as Draft"
+            >
+              Reopen
+            </button>
+          )}
+          {so.status === 'CANCELLED' && (
+            <button
+              onClick={() => onStatusUpdate(so.id, 'DRAFT')}
+              className="text-[10px] font-bold text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 px-2 py-1 rounded transition whitespace-nowrap"
+              title="Reopen Order"
+            >
+              Reopen
+            </button>
+          )}
+          <button
+            onClick={() => onSelect(so)}
+            className="text-[10px] font-bold text-slate-500 hover:text-[#1E40AF] bg-slate-50 hover:bg-blue-50 px-2 py-1 rounded transition"
+            title="View Details"
+          >
+            <Eye className="w-3.5 h-3.5" />
+          </button>
+          {onViewPdf && (
+            <button
+              onClick={() => onViewPdf(so)}
+              className="text-[10px] font-bold text-[#1E40AF] hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded transition flex items-center space-x-1"
+              title="View & Download PDF"
+            >
+              <Printer className="w-3.5 h-3.5" />
+              <span>PDF</span>
+            </button>
+          )}
+        </div>
+      )
+    }
+  ];
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h2 className="text-lg font-bold text-slate-800">Sales Orders</h2>
-          <p className="text-xs text-slate-500 mt-0.5">{orders.length} commercial sales orders</p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={onExportCsv}
-            className="flex items-center space-x-1.5 px-3.5 py-2.5 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold transition shadow-sm"
-            title="Export Sales Orders to CSV"
-          >
-            <Download className="w-4 h-4 text-slate-500" />
-            <span>EXPORT CSV</span>
-          </button>
-          <button
-            onClick={onCreateNew}
-            className="flex items-center space-x-2 px-4 py-2.5 bg-[#1E40AF] text-white rounded-lg text-xs font-bold hover:bg-blue-800 transition shadow-sm"
-          >
-            <Plus className="w-4 h-4" />
-            <span>NEW SALES ORDER</span>
-          </button>
-        </div>
-      </div>
-
       {/* Filter Tabs */}
-      <div className="flex items-center space-x-2 flex-wrap">
+      <div className="flex items-center space-x-2 flex-wrap gap-y-1.5">
         {statuses.map(s => (
           <button
             key={s}
             onClick={() => setFilter(s)}
             className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${
               filter === s
-                ? 'bg-[#1E40AF] text-white'
+                ? 'bg-[#1E40AF] text-white shadow-sm'
                 : 'bg-white text-slate-500 border border-slate-200 hover:border-[#1E40AF] hover:text-[#1E40AF]'
             }`}
           >
@@ -587,224 +815,14 @@ function SalesOrderList({ orders, onSelect, onStatusUpdate, onCreateNew, onViewP
         ))}
       </div>
 
-      {/* SO Table */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <table className="w-full">
-          <thead>
-            <tr className="bg-slate-50 border-b border-slate-200">
-              {['SO Number', 'Customer', 'Order Date', 'Incoterms', 'Payment Terms', 'Total', 'Outstanding', 'Status', 'Actions'].map(h => (
-                <th key={h} className="text-left px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {filtered.map(so => (
-              <tr key={so.id} className="hover:bg-blue-50/40 transition-colors">
-                <td className="px-4 py-3">
-                  <button onClick={() => onSelect(so)} className="text-xs font-bold text-[#1E40AF] hover:underline">
-                    {so.so_number}
-                  </button>
-                </td>
-                <td className="px-4 py-3 text-xs font-semibold text-slate-700 truncate max-w-[200px]">{so.customer_name}</td>
-                <td className="px-4 py-3 text-xs text-slate-600">{so.order_date}</td>
-                <td className="px-4 py-3">
-                  <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">{so.incoterms}</span>
-                </td>
-                <td className="px-4 py-3 text-xs text-slate-600">{so.payment_terms}</td>
-                <td className="px-4 py-3 text-xs font-bold text-slate-800">${(so.grand_total || 0).toLocaleString()}</td>
-                <td className="px-4 py-3 text-xs font-semibold text-amber-600">${(so.outstanding_amount || 0).toLocaleString()}</td>
-                <td className="px-4 py-3">
-                  <span className={`text-[10px] font-bold px-2 py-1 rounded ${STATUS_COLORS[so.status] || 'bg-slate-100'}`}>
-                    {so.status?.replace(/_/g, ' ')}
-                  </span>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center space-x-1.5 flex-wrap gap-y-1">
-                    {so.status === 'DRAFT' && (
-                      <>
-                        <button
-                          onClick={() => onStatusUpdate(so.id, 'CONFIRMED')}
-                          className="text-[10px] font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded transition whitespace-nowrap"
-                          title="Confirm Order"
-                        >
-                          Confirm
-                        </button>
-                        <button
-                          onClick={() => onStatusUpdate(so.id, 'CANCELLED')}
-                          className="text-[10px] font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 px-2 py-1 rounded transition whitespace-nowrap"
-                          title="Cancel Order"
-                        >
-                          Cancel
-                        </button>
-                      </>
-                    )}
-                    {so.status === 'CONFIRMED' && (
-                      <>
-                        <button
-                          onClick={() => onStatusUpdate(so.id, 'FULLY_DELIVERED')}
-                          className="text-[10px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded transition whitespace-nowrap"
-                          title="Deliver Shipment"
-                        >
-                          Deliver
-                        </button>
-                        <button
-                          onClick={() => onStatusUpdate(so.id, 'INVOICED')}
-                          className="text-[10px] font-bold text-purple-600 bg-purple-50 hover:bg-purple-100 px-2 py-1 rounded transition whitespace-nowrap"
-                          title="Direct to Invoiced"
-                        >
-                          Invoice
-                        </button>
-                        <button
-                          onClick={() => onStatusUpdate(so.id, 'CANCELLED')}
-                          className="text-[10px] font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 px-2 py-1 rounded transition whitespace-nowrap"
-                          title="Cancel Order"
-                        >
-                          Cancel
-                        </button>
-                      </>
-                    )}
-                    {so.status === 'PARTIALLY_DELIVERED' && (
-                      <>
-                        <button
-                          onClick={() => onStatusUpdate(so.id, 'FULLY_DELIVERED')}
-                          className="text-[10px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded transition whitespace-nowrap"
-                          title="Complete Delivery"
-                        >
-                          Full Deliver
-                        </button>
-                        <button
-                          onClick={() => onStatusUpdate(so.id, 'INVOICED')}
-                          className="text-[10px] font-bold text-purple-600 bg-purple-50 hover:bg-purple-100 px-2 py-1 rounded transition whitespace-nowrap"
-                          title="Invoice Delivered"
-                        >
-                          Invoice
-                        </button>
-                      </>
-                    )}
-                    {so.status === 'FULLY_DELIVERED' && (
-                      <>
-                        <button
-                          onClick={() => onStatusUpdate(so.id, 'INVOICED')}
-                          className="text-[10px] font-bold text-purple-600 bg-purple-50 hover:bg-purple-100 px-2 py-1 rounded transition whitespace-nowrap"
-                          title="Generate Commercial Invoice"
-                        >
-                          Invoice
-                        </button>
-                        <button
-                          onClick={() => onStatusUpdate(so.id, 'PAID')}
-                          className="text-[10px] font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-2 py-1 rounded transition whitespace-nowrap"
-                          title="Direct Mark Paid"
-                        >
-                          Mark Paid
-                        </button>
-                      </>
-                    )}
-                    {so.status === 'INVOICED' && (
-                      <>
-                        <button
-                          onClick={() => onStatusUpdate(so.id, 'PARTIALLY_PAID')}
-                          className="text-[10px] font-bold text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 px-2 py-1 rounded transition whitespace-nowrap"
-                          title="Record Partial Payment (50%)"
-                        >
-                          Partial Paid
-                        </button>
-                        <button
-                          onClick={() => onStatusUpdate(so.id, 'PAID')}
-                          className="text-[10px] font-bold text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-2 py-1 rounded transition whitespace-nowrap"
-                          title="Record Full Settlement (100%)"
-                        >
-                          Mark Paid
-                        </button>
-                        <button
-                          onClick={() => onStatusUpdate(so.id, 'CANCELLED')}
-                          className="text-[10px] font-bold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-2 py-1 rounded transition whitespace-nowrap"
-                          title="Cancel Order"
-                        >
-                          Cancel
-                        </button>
-                      </>
-                    )}
-                    {so.status === 'PARTIALLY_PAID' && (
-                      <>
-                        <button
-                          onClick={() => onStatusUpdate(so.id, 'PAID')}
-                          className="text-[10px] font-bold text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-2 py-1 rounded transition whitespace-nowrap"
-                          title="Settle Balance & Mark Full Paid (100%)"
-                        >
-                          Mark Full Paid
-                        </button>
-                        <button
-                          onClick={() => onStatusUpdate(so.id, 'CLOSED')}
-                          className="text-[10px] font-bold text-slate-600 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded transition whitespace-nowrap"
-                          title="Close Short Settlement"
-                        >
-                          Close
-                        </button>
-                        <button
-                          onClick={() => onStatusUpdate(so.id, 'CANCELLED')}
-                          className="text-[10px] font-bold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-2 py-1 rounded transition whitespace-nowrap"
-                          title="Cancel Balance"
-                        >
-                          Cancel
-                        </button>
-                      </>
-                    )}
-                    {so.status === 'PAID' && (
-                      <button
-                        onClick={() => onStatusUpdate(so.id, 'CLOSED')}
-                        className="text-[10px] font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-2 py-1 rounded transition whitespace-nowrap"
-                        title="Close Completed Order"
-                      >
-                        Close
-                      </button>
-                    )}
-                    {so.status === 'CLOSED' && (
-                      <button
-                        onClick={() => onStatusUpdate(so.id, 'DRAFT')}
-                        className="text-[10px] font-bold text-slate-600 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded transition whitespace-nowrap"
-                        title="Reopen Order as Draft"
-                      >
-                        Reopen
-                      </button>
-                    )}
-                    {so.status === 'CANCELLED' && (
-                      <button
-                        onClick={() => onStatusUpdate(so.id, 'DRAFT')}
-                        className="text-[10px] font-bold text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 px-2 py-1 rounded transition whitespace-nowrap"
-                        title="Reopen Order"
-                      >
-                        Reopen
-                      </button>
-                    )}
-                    <button
-                      onClick={() => onSelect(so)}
-                      className="text-[10px] font-bold text-slate-500 hover:text-[#1E40AF] bg-slate-50 hover:bg-blue-50 px-2 py-1 rounded transition"
-                      title="View Details"
-                    >
-                      <Eye className="w-3.5 h-3.5" />
-                    </button>
-                    {onViewPdf && (
-                      <button
-                        onClick={() => onViewPdf(so)}
-                        className="text-[10px] font-bold text-[#1E40AF] hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded transition flex items-center space-x-1"
-                        title="View & Download PDF"
-                      >
-                        <Printer className="w-3.5 h-3.5" />
-                        <span>PDF</span>
-                      </button>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {filtered.length === 0 && (
-              <tr>
-                <td colSpan={9} className="px-4 py-12 text-center text-sm text-slate-400">No sales orders found</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      <DataTable
+        columns={columns}
+        data={filtered}
+        title="Sales_Orders_Registry"
+        searchPlaceholder="Search SO #, customer, incoterms, status..."
+        onAdd={onCreateNew}
+        addLabel="+ New Sales Order"
+      />
     </div>
   );
 }
@@ -815,79 +833,88 @@ function SalesOrderList({ orders, onSelect, onStatusUpdate, onCreateNew, onViewP
 // ═══════════════════════════════════════════════════════════
 
 function InvoiceList({ invoices, salesOrders, onCreateNew, onViewPdf, onExportCsv }) {
+  const columns = [
+    {
+      key: 'invoice_number',
+      header: 'INVOICE NUMBER',
+      render: (val) => <span className="font-mono font-bold text-[#1E40AF] text-xs">{val}</span>
+    },
+    {
+      key: 'so_number',
+      header: 'SO REF',
+      render: (val) => <span className="font-mono text-xs font-semibold text-slate-600">{val || '—'}</span>
+    },
+    {
+      key: 'customer_name',
+      header: 'CUSTOMER',
+      render: (val) => <strong className="text-slate-700 text-xs">{val}</strong>
+    },
+    {
+      key: 'invoice_date',
+      header: 'INVOICE DATE',
+      render: (val) => <span className="font-mono text-xs text-slate-600">{val}</span>
+    },
+    {
+      key: 'due_date',
+      header: 'DUE DATE',
+      render: (val) => <span className="font-mono text-xs text-slate-600">{val}</span>
+    },
+    {
+      key: 'grand_total',
+      header: 'TOTAL (USD)',
+      align: 'right',
+      render: (val) => <span className="font-mono font-bold text-slate-800 text-xs">${(val || 0).toLocaleString()}</span>
+    },
+    {
+      key: 'paid_amount',
+      header: 'PAID AMOUNT',
+      align: 'right',
+      render: (val) => <span className="font-mono font-semibold text-emerald-600 text-xs">${(val || 0).toLocaleString()}</span>
+    },
+    {
+      key: 'outstanding_amount',
+      header: 'BALANCE DUE',
+      align: 'right',
+      render: (val) => <span className="font-mono font-bold text-amber-600 text-xs">${(val || 0).toLocaleString()}</span>
+    },
+    {
+      key: 'status',
+      header: 'STATUS',
+      render: (val) => (
+        <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${STATUS_COLORS[val] || 'bg-slate-100'}`}>
+          {val}
+        </span>
+      )
+    },
+    {
+      key: 'actions',
+      header: 'ACTIONS',
+      sortable: false,
+      render: (_, inv) => (
+        onViewPdf ? (
+          <button
+            onClick={() => onViewPdf(inv)}
+            className="text-[10px] font-bold text-[#1E40AF] hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded transition flex items-center space-x-1"
+            title="View & Download PDF"
+          >
+            <Printer className="w-3.5 h-3.5" />
+            <span>PDF</span>
+          </button>
+        ) : null
+      )
+    }
+  ];
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h2 className="text-lg font-bold text-slate-800">Sales Invoices &amp; Billing</h2>
-          <p className="text-xs text-slate-500 mt-0.5">{invoices.length} invoices generated</p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={onExportCsv}
-            className="flex items-center space-x-1.5 px-3.5 py-2.5 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold transition shadow-sm"
-            title="Export Invoices to CSV"
-          >
-            <Download className="w-4 h-4 text-slate-500" />
-            <span>EXPORT CSV</span>
-          </button>
-          <button
-            onClick={onCreateNew}
-            className="flex items-center space-x-2 px-4 py-2.5 bg-[#1E40AF] text-white rounded-lg text-xs font-bold hover:bg-blue-800 transition shadow-sm"
-          >
-            <Plus className="w-4 h-4" />
-            <span>GENERATE INVOICE</span>
-          </button>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <table className="w-full">
-          <thead>
-            <tr className="bg-slate-50 border-b border-slate-200">
-              {['Invoice Number', 'SO Ref', 'Customer', 'Date', 'Due Date', 'Total', 'Paid', 'Balance Due', 'Status', 'Actions'].map(h => (
-                <th key={h} className="text-left px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {invoices.map(inv => (
-              <tr key={inv.id} className="hover:bg-blue-50/40 transition-colors">
-                <td className="px-4 py-3 text-xs font-bold text-[#1E40AF]">{inv.invoice_number}</td>
-                <td className="px-4 py-3 text-xs font-semibold text-slate-600">{inv.so_number || '—'}</td>
-                <td className="px-4 py-3 text-xs font-semibold text-slate-700">{inv.customer_name}</td>
-                <td className="px-4 py-3 text-xs text-slate-600">{inv.invoice_date}</td>
-                <td className="px-4 py-3 text-xs text-slate-600">{inv.due_date}</td>
-                <td className="px-4 py-3 text-xs font-bold text-slate-800">${(inv.grand_total || 0).toLocaleString()}</td>
-                <td className="px-4 py-3 text-xs font-semibold text-green-600">${(inv.paid_amount || 0).toLocaleString()}</td>
-                <td className="px-4 py-3 text-xs font-bold text-amber-600">${(inv.outstanding_amount || 0).toLocaleString()}</td>
-                <td className="px-4 py-3">
-                  <span className={`text-[10px] font-bold px-2 py-1 rounded ${STATUS_COLORS[inv.status] || 'bg-slate-100'}`}>
-                    {inv.status}
-                  </span>
-                </td>
-                <td className="px-4 py-3">
-                  {onViewPdf && (
-                    <button
-                      onClick={() => onViewPdf(inv)}
-                      className="text-[10px] font-bold text-[#1E40AF] hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded transition flex items-center space-x-1"
-                      title="View & Download PDF"
-                    >
-                      <Printer className="w-3.5 h-3.5" />
-                      <span>PDF</span>
-                    </button>
-                  )}
-                </td>
-              </tr>
-            ))}
-            {invoices.length === 0 && (
-              <tr>
-                <td colSpan={10} className="px-4 py-12 text-center text-sm text-slate-400">No invoices found</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      <DataTable
+        columns={columns}
+        data={invoices}
+        title="Commercial_Invoices_Registry"
+        searchPlaceholder="Search invoice #, SO ref, customer..."
+        onAdd={onCreateNew}
+        addLabel="+ Generate Invoice"
+      />
     </div>
   );
 }
@@ -905,54 +932,130 @@ function GeneralLedgerView({ accounts, journalEntries, onAddAccount }) {
     ? accounts
     : accounts.filter(a => a.account_type === typeFilter);
 
+  const coaColumns = [
+    {
+      key: 'account_code',
+      header: 'ACCOUNT CODE',
+      render: (val) => <span className="font-mono font-bold text-slate-700 text-xs">{val}</span>
+    },
+    {
+      key: 'account_name',
+      header: 'ACCOUNT NAME',
+      render: (val, acc) => (
+        <span className={`text-xs ${acc.is_group ? 'font-bold text-slate-900' : 'text-slate-800'} ${acc.parent_account ? 'ml-4' : ''}`}>
+          {acc.is_group ? '📁 ' : '📄 '}
+          {val}
+        </span>
+      )
+    },
+    {
+      key: 'account_type',
+      header: 'TYPE',
+      render: (val) => (
+        <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${ACCOUNT_TYPE_COLORS[val] || 'bg-slate-50'}`}>
+          {val}
+        </span>
+      )
+    },
+    {
+      key: 'currency',
+      header: 'CURRENCY',
+      render: (val) => <span className="text-xs text-slate-500 font-mono">{val}</span>
+    },
+    {
+      key: 'balance',
+      header: 'BALANCE (USD)',
+      align: 'right',
+      render: (val) => <span className="font-mono font-bold text-slate-800 text-xs">${(val || 0).toLocaleString()}</span>
+    },
+    {
+      key: 'status',
+      header: 'STATUS',
+      align: 'center',
+      render: () => <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">Active</span>
+    }
+  ];
+
+  const glColumns = [
+    {
+      key: 'entry_number',
+      header: 'ENTRY #',
+      render: (val) => <span className="font-mono font-bold text-[#1E40AF] text-xs">{val}</span>
+    },
+    {
+      key: 'entry_date',
+      header: 'DATE',
+      render: (val) => <span className="font-mono text-xs text-slate-600">{val}</span>
+    },
+    {
+      key: 'account_name',
+      header: 'ACCOUNT NAME',
+      render: (val) => <strong className="text-xs text-slate-800">{val}</strong>
+    },
+    {
+      key: 'party_name',
+      header: 'PARTY / ENTITY',
+      render: (val) => <span className="text-xs text-slate-600">{val || '—'}</span>
+    },
+    {
+      key: 'reference_type',
+      header: 'REFERENCE',
+      render: (val, je) => <span className="text-[10px] text-slate-500 font-mono">{val} #{je.reference_id}</span>
+    },
+    {
+      key: 'debit',
+      header: 'DEBIT (USD)',
+      align: 'right',
+      render: (val) => val > 0 ? <span className="font-mono font-bold text-emerald-600 text-xs">${val.toLocaleString()}</span> : '—'
+    },
+    {
+      key: 'credit',
+      header: 'CREDIT (USD)',
+      align: 'right',
+      render: (val) => val > 0 ? <span className="font-mono font-bold text-rose-600 text-xs">${val.toLocaleString()}</span> : '—'
+    },
+    {
+      key: 'narration',
+      header: 'NARRATION',
+      render: (val) => <span className="text-xs text-slate-500 block truncate max-w-xs">{val}</span>
+    }
+  ];
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={() => setActiveTab('coa')}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
-              activeTab === 'coa'
-                ? 'bg-[#1E40AF] text-white shadow-sm'
-                : 'bg-white text-slate-600 border border-slate-200'
-            }`}
-          >
-            Chart of Accounts ({accounts.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('gl')}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
-              activeTab === 'gl'
-                ? 'bg-[#1E40AF] text-white shadow-sm'
-                : 'bg-white text-slate-600 border border-slate-200'
-            }`}
-          >
-            Journal Entries & GL ({journalEntries.length})
-          </button>
-        </div>
-
-        {activeTab === 'coa' && (
-          <button
-            onClick={onAddAccount}
-            className="flex items-center space-x-2 px-4 py-2 bg-[#1E40AF] text-white rounded-lg text-xs font-bold hover:bg-blue-800 transition shadow-sm"
-          >
-            <Plus className="w-4 h-4" />
-            <span>ADD GL ACCOUNT</span>
-          </button>
-        )}
+      <div className="flex items-center space-x-2">
+        <button
+          onClick={() => setActiveTab('coa')}
+          className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+            activeTab === 'coa'
+              ? 'bg-[#1E40AF] text-white shadow-sm'
+              : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+          }`}
+        >
+          Chart of Accounts ({accounts.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('gl')}
+          className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+            activeTab === 'gl'
+              ? 'bg-[#1E40AF] text-white shadow-sm'
+              : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+          }`}
+        >
+          Journal Entries &amp; GL ({journalEntries.length})
+        </button>
       </div>
 
       {activeTab === 'coa' ? (
         <div className="space-y-3">
-          {/* Filter Pills */}
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 flex-wrap gap-y-1">
             {['ALL', 'Asset', 'Liability', 'Equity', 'Income', 'Expense'].map(t => (
               <button
                 key={t}
                 onClick={() => setTypeFilter(t)}
                 className={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${
                   typeFilter === t
-                    ? 'bg-[#1E40AF] text-white'
+                    ? 'bg-[#1E40AF] text-white shadow-sm'
                     : 'bg-white text-slate-500 border border-slate-200 hover:text-[#1E40AF]'
                 }`}
               >
@@ -961,77 +1064,22 @@ function GeneralLedgerView({ accounts, journalEntries, onAddAccount }) {
             ))}
           </div>
 
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200">
-                  {['Code', 'Account Name', 'Type', 'Currency', 'Balance', 'Status'].map(h => (
-                    <th key={h} className="text-left px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredAccounts.map(acc => (
-                  <tr key={acc.id} className={acc.is_group ? 'bg-slate-50/70 font-bold' : 'hover:bg-blue-50/40'}>
-                    <td className="px-4 py-2.5 text-xs font-mono text-slate-600">{acc.account_code}</td>
-                    <td className="px-4 py-2.5 text-xs text-slate-800">
-                      <span className={acc.parent_account ? 'ml-4' : ''}>
-                        {acc.is_group ? '📁 ' : '📄 '}
-                        {acc.account_name}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2.5">
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${ACCOUNT_TYPE_COLORS[acc.account_type]}`}>
-                        {acc.account_type}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2.5 text-xs text-slate-500">{acc.currency}</td>
-                    <td className="px-4 py-2.5 text-xs font-bold text-slate-800">${(acc.balance || 0).toLocaleString()}</td>
-                    <td className="px-4 py-2.5">
-                      <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">Active</span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            columns={coaColumns}
+            data={filteredAccounts}
+            title="Chart_of_Accounts"
+            searchPlaceholder="Search account code, name, type..."
+            onAdd={onAddAccount}
+            addLabel="+ Add GL Account"
+          />
         </div>
       ) : (
-        /* Journal Entries Log */
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-slate-50 border-b border-slate-200">
-                {['Entry #', 'Date', 'Account', 'Party', 'Reference', 'Debit', 'Credit', 'Narration'].map(h => (
-                  <th key={h} className="text-left px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {journalEntries.map(je => (
-                <tr key={je.id} className="hover:bg-blue-50/40 transition-colors">
-                  <td className="px-4 py-2.5 text-xs font-mono font-bold text-[#1E40AF]">{je.entry_number}</td>
-                  <td className="px-4 py-2.5 text-xs text-slate-600">{je.entry_date}</td>
-                  <td className="px-4 py-2.5 text-xs font-semibold text-slate-800">{je.account_name}</td>
-                  <td className="px-4 py-2.5 text-xs text-slate-600">{je.party_name || '—'}</td>
-                  <td className="px-4 py-2.5 text-[10px] text-slate-500 font-mono">{je.reference_type} #{je.reference_id}</td>
-                  <td className="px-4 py-2.5 text-xs font-bold text-emerald-600">
-                    {je.debit > 0 ? `$${je.debit.toLocaleString()}` : '—'}
-                  </td>
-                  <td className="px-4 py-2.5 text-xs font-bold text-rose-600">
-                    {je.credit > 0 ? `$${je.credit.toLocaleString()}` : '—'}
-                  </td>
-                  <td className="px-4 py-2.5 text-xs text-slate-500 truncate max-w-[200px]">{je.narration}</td>
-                </tr>
-              ))}
-              {journalEntries.length === 0 && (
-                <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center text-sm text-slate-400">No journal entries recorded</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <DataTable
+          columns={glColumns}
+          data={journalEntries}
+          title="General_Ledger_Journal_Entries"
+          searchPlaceholder="Search entry #, account, party, narration..."
+        />
       )}
     </div>
   );
@@ -1043,61 +1091,72 @@ function GeneralLedgerView({ accounts, journalEntries, onAddAccount }) {
 // ═══════════════════════════════════════════════════════════
 
 function PaymentList({ payments, invoices, onCreateNew }) {
+  const columns = [
+    {
+      key: 'payment_number',
+      header: 'PAYMENT #',
+      render: (val) => <span className="font-mono font-bold text-[#1E40AF] text-xs">{val}</span>
+    },
+    {
+      key: 'payment_type',
+      header: 'TYPE',
+      render: (val) => (
+        <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+          val === 'RECEIVE' ? 'bg-green-100 text-green-700' : 'bg-rose-100 text-rose-700'
+        }`}>
+          {val}
+        </span>
+      )
+    },
+    {
+      key: 'party_name',
+      header: 'PARTY / ENTITY',
+      render: (val) => <strong className="text-slate-700 text-xs">{val}</strong>
+    },
+    {
+      key: 'payment_date',
+      header: 'PAYMENT DATE',
+      render: (val) => <span className="font-mono text-xs text-slate-600">{val}</span>
+    },
+    {
+      key: 'mode_of_payment',
+      header: 'MODE',
+      render: (val) => <span className="text-xs text-slate-600">{val}</span>
+    },
+    {
+      key: 'paid_amount',
+      header: 'AMOUNT (USD)',
+      align: 'right',
+      render: (val) => <span className="font-mono font-bold text-slate-800 text-xs">${(val || 0).toLocaleString()}</span>
+    },
+    {
+      key: 'reference_no',
+      header: 'REFERENCE UTR/LC',
+      render: (val) => <span className="font-mono text-xs text-slate-500">{val || '—'}</span>
+    },
+    {
+      key: 'allocated_invoice_number',
+      header: 'ALLOCATED INVOICE',
+      render: (val) => <span className="font-mono text-xs text-[#1E40AF] font-bold">{val || '—'}</span>
+    },
+    {
+      key: 'status',
+      header: 'STATUS',
+      align: 'center',
+      render: () => <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">Settled</span>
+    }
+  ];
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h2 className="text-lg font-bold text-slate-800">Payment Entries & Settlements</h2>
-          <p className="text-xs text-slate-500 mt-0.5">{payments.length} banking & settlement transactions</p>
-        </div>
-        <button
-          onClick={onCreateNew}
-          className="flex items-center space-x-2 px-4 py-2.5 bg-[#1E40AF] text-white rounded-lg text-xs font-bold hover:bg-blue-800 transition shadow-sm"
-        >
-          <Plus className="w-4 h-4" />
-          <span>RECORD PAYMENT</span>
-        </button>
-      </div>
-
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <table className="w-full">
-          <thead>
-            <tr className="bg-slate-50 border-b border-slate-200">
-              {['Payment #', 'Type', 'Party', 'Date', 'Mode', 'Amount', 'Reference UTR/LC', 'Allocated Invoice', 'Status'].map(h => (
-                <th key={h} className="text-left px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {payments.map(pay => (
-              <tr key={pay.id} className="hover:bg-blue-50/40 transition-colors">
-                <td className="px-4 py-3 text-xs font-mono font-bold text-[#1E40AF]">{pay.payment_number}</td>
-                <td className="px-4 py-3">
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
-                    pay.payment_type === 'RECEIVE' ? 'bg-green-100 text-green-700' : 'bg-rose-100 text-rose-700'
-                  }`}>
-                    {pay.payment_type}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-xs font-semibold text-slate-700">{pay.party_name}</td>
-                <td className="px-4 py-3 text-xs text-slate-600">{pay.payment_date}</td>
-                <td className="px-4 py-3 text-xs text-slate-600">{pay.mode_of_payment}</td>
-                <td className="px-4 py-3 text-xs font-bold text-slate-800">${(pay.paid_amount || 0).toLocaleString()}</td>
-                <td className="px-4 py-3 text-xs font-mono text-slate-500">{pay.reference_no || '—'}</td>
-                <td className="px-4 py-3 text-xs font-mono text-[#1E40AF]">{pay.allocated_invoice_number || '—'}</td>
-                <td className="px-4 py-3">
-                  <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">Settled</span>
-                </td>
-              </tr>
-            ))}
-            {payments.length === 0 && (
-              <tr>
-                <td colSpan={9} className="px-4 py-12 text-center text-sm text-slate-400">No payment entries found</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      <DataTable
+        columns={columns}
+        data={payments}
+        title="Payment_Entries_and_Settlements"
+        searchPlaceholder="Search payment #, party, mode, UTR..."
+        onAdd={onCreateNew}
+        addLabel="+ Record Payment"
+      />
     </div>
   );
 }

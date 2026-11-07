@@ -15,7 +15,10 @@ from .endpoints import (
     recruitment,
     performance,
     procurement,
-    finance
+    finance,
+    assets,
+    inventory,
+    operations
 )
 
 api_router = APIRouter()
@@ -37,3 +40,6 @@ api_router.include_router(attendance.overtime_router)
 api_router.include_router(performance.router)
 api_router.include_router(procurement.router)
 api_router.include_router(finance.router)
+api_router.include_router(assets.router)
+api_router.include_router(inventory.router, prefix="/inventory", tags=["Warehouse & Inventory"])
+api_router.include_router(operations.router, prefix="/operations", tags=["Operations & Order Execution"])

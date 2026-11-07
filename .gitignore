@@ -39,3 +39,17 @@ npm-debug.log*
 # Temporary
 *.tmp
 *.bak
+
+# Dev certificates & SSL keys
+certs/
+*.pem
+*.key
+*.crt
+
+# Network traffic captures
+*.har
+
+# Scratch & development tooling
+.agents/
+scripts/
+

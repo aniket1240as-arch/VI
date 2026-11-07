@@ -305,6 +305,21 @@ class ApiService {
     return this._request('DELETE', `/tasks/${id}`);
   }
 
+  async updateTaskStatus(id, { status, hold_reason, hold_comments, resolution_notes, comment, user }) {
+    return this._request('PATCH', `/tasks/${id}/status`, {
+      status,
+      hold_reason,
+      hold_comments,
+      resolution_notes,
+      comment,
+      user
+    });
+  }
+
+  async addTaskComment(id, { comment, user }) {
+    return this._request('POST', `/tasks/${id}/comment`, { comment, user });
+  }
+
   // ──────────────────── Reports ────────────────────
   async getExportRevenueAnalytics() {
     return this._request('GET', '/reports/export-revenue');
@@ -584,6 +599,277 @@ class ApiService {
   async getFinanceSummary() {
     return this._request('GET', '/finance/summary');
   }
+
+  // ──────────────────── Assets Management (Live System) ────────────────────
+  async getAssets(branch = null, typeName = null, search = null) {
+    const params = [];
+    if (branch && branch !== 'ALL') params.push(`branch=${encodeURIComponent(branch)}`);
+    if (typeName && typeName !== 'ALL') params.push(`type_name=${encodeURIComponent(typeName)}`);
+    if (search) params.push(`search=${encodeURIComponent(search)}`);
+    const qs = params.length ? '?' + params.join('&') : '';
+    return this._request('GET', `/assets${qs}`);
+  }
+
+  async getAssetById(id) {
+    return this._request('GET', `/assets/${id}`);
+  }
+
+  async createAsset(asset) {
+    return this._request('POST', '/assets', asset);
+  }
+
+  async updateAsset(id, asset) {
+    return this._request('PUT', `/assets/${id}`, asset);
+  }
+
+  async deleteAsset(id) {
+    return this._request('DELETE', `/assets/${id}`);
+  }
+
+  async getAssetTypes() {
+    return this._request('GET', '/assets/types');
+  }
+
+  async createAssetType(assetType) {
+    return this._request('POST', '/assets/types', assetType);
+  }
+
+  async updateAssetType(id, assetType) {
+    return this._request('PUT', `/assets/types/${id}`, assetType);
+  }
+
+  async deleteAssetType(id) {
+    return this._request('DELETE', `/assets/types/${id}`);
+  }
+
+  // ──────────────────── Extended Masters (Live Reverse Engineered) ────────────
+  async getBanks() {
+    return this._request('GET', '/admin/banks');
+  }
+  async createBank(bank) {
+    return this._request('POST', '/admin/banks', bank);
+  }
+  async deleteBank(id) {
+    return this._request('DELETE', `/admin/banks/${id}`);
+  }
+
+  async getPorts() {
+    return this._request('GET', '/admin/ports');
+  }
+  async createPort(port) {
+    return this._request('POST', '/admin/ports', port);
+  }
+  async deletePort(id) {
+    return this._request('DELETE', `/admin/ports/${id}`);
+  }
+
+  async getQcParties() {
+    return this._request('GET', '/admin/qc-parties');
+  }
+  async createQcParty(party) {
+    return this._request('POST', '/admin/qc-parties', party);
+  }
+  async deleteQcParty(id) {
+    return this._request('DELETE', `/admin/qc-parties/${id}`);
+  }
+
+  async getNotifyParties() {
+    return this._request('GET', '/admin/notify-parties');
+  }
+  async createNotifyParty(party) {
+    return this._request('POST', '/admin/notify-parties', party);
+  }
+  async deleteNotifyParty(id) {
+    return this._request('DELETE', `/admin/notify-parties/${id}`);
+  }
+
+  async getPayees() {
+    return this._request('GET', '/admin/payees');
+  }
+  async createPayee(payee) {
+    return this._request('POST', '/admin/payees', payee);
+  }
+  async deletePayee(id) {
+    return this._request('DELETE', `/admin/payees/${id}`);
+  }
+
+  // ──────────────────── Warehouse & Inventory (Live System) ─────────────────
+  async getInventoryItems(warehouse = null, category = null, search = null) {
+    const params = [];
+    if (warehouse && warehouse !== 'ALL') params.push(`warehouse=${encodeURIComponent(warehouse)}`);
+    if (category && category !== 'ALL') params.push(`category=${encodeURIComponent(category)}`);
+    if (search) params.push(`search=${encodeURIComponent(search)}`);
+    const qs = params.length ? '?' + params.join('&') : '';
+    return this._request('GET', `/inventory/items${qs}`);
+  }
+
+  async createInventoryItem(item) {
+    return this._request('POST', '/inventory/items', item);
+  }
+
+  async getWarehouseTransactions(type = null, search = null) {
+    const params = [];
+    if (type && type !== 'ALL') params.push(`type=${encodeURIComponent(type)}`);
+    if (search) params.push(`search=${encodeURIComponent(search)}`);
+    const qs = params.length ? '?' + params.join('&') : '';
+    return this._request('GET', `/inventory/transactions${qs}`);
+  }
+
+  async createWarehouseTransaction(txn) {
+    return this._request('POST', '/inventory/transactions', txn);
+  }
+
+  async getWarehouseDamages(type = null, search = null) {
+    const params = [];
+    if (type && type !== 'ALL') params.push(`type=${encodeURIComponent(type)}`);
+    if (search) params.push(`search=${encodeURIComponent(search)}`);
+    const qs = params.length ? '?' + params.join('&') : '';
+    return this._request('GET', `/inventory/damages${qs}`);
+  }
+
+  async createWarehouseDamage(dmg) {
+    return this._request('POST', '/inventory/damages', dmg);
+  }
+
+  // ──────────────────── Operations & Order Execution ────────────────────────
+  async getOrderExecutions(status = null, search = null) {
+    const params = [];
+    if (status && status !== 'ALL') params.push(`status=${encodeURIComponent(status)}`);
+    if (search) params.push(`search=${encodeURIComponent(search)}`);
+    const qs = params.length ? '?' + params.join('&') : '';
+    return this._request('GET', `/operations/executions${qs}`);
+  }
+
+  async createOrderExecution(execution) {
+    return this._request('POST', '/operations/executions', execution);
+  }
+
+  async getDocumentSubmissions(status = null, search = null) {
+    const params = [];
+    if (status && status !== 'ALL') params.push(`status=${encodeURIComponent(status)}`);
+    if (search) params.push(`search=${encodeURIComponent(search)}`);
+    const qs = params.length ? '?' + params.join('&') : '';
+    return this._request('GET', `/operations/documents${qs}`);
+  }
+
+  async createDocumentSubmission(doc) {
+    return this._request('POST', '/operations/documents', doc);
+  }
+
+  async getDeliveryClaims(status = null, search = null) {
+    const params = [];
+    if (status && status !== 'ALL') params.push(`status=${encodeURIComponent(status)}`);
+    if (search) params.push(`search=${encodeURIComponent(search)}`);
+    const qs = params.length ? '?' + params.join('&') : '';
+    return this._request('GET', `/operations/claims${qs}`);
+  }
+
+  async createDeliveryClaim(claim) {
+    return this._request('POST', '/operations/claims', claim);
+  }
+
+  // ──────────────────── Commercial Finance & Debit/Credit Notes ─────────────
+  async getDebitCreditNotes(type = null, partyType = null, search = null) {
+    const params = [];
+    if (type && type !== 'ALL') params.push(`type=${encodeURIComponent(type)}`);
+    if (partyType && partyType !== 'ALL') params.push(`party_type=${encodeURIComponent(partyType)}`);
+    if (search) params.push(`search=${encodeURIComponent(search)}`);
+    const qs = params.length ? '?' + params.join('&') : '';
+    return this._request('GET', `/finance/notes${qs}`);
+  }
+
+  async createDebitCreditNote(note) {
+    return this._request('POST', '/finance/notes', note);
+  }
+
+  async getBuyerAgingReport() {
+    return this._request('GET', '/finance/buyer-aging');
+  }
+
+  // ──────────────────── Full System Masters Suite (Live System) ─────────────
+  async getCompanyProfiles() {
+    return this._request('GET', '/admin/company-profiles');
+  }
+  async createCompanyProfile(profile) {
+    return this._request('POST', '/admin/company-profiles', profile);
+  }
+
+  async getBranches() {
+    return this._request('GET', '/admin/branches');
+  }
+  async createBranch(branch) {
+    return this._request('POST', '/admin/branches', branch);
+  }
+
+  async getMasterWarehouses() {
+    return this._request('GET', '/admin/master-warehouses');
+  }
+  async createMasterWarehouse(wh) {
+    return this._request('POST', '/admin/master-warehouses', wh);
+  }
+
+  async getMasterLocations() {
+    return this._request('GET', '/admin/master-locations');
+  }
+  async createMasterLocation(loc) {
+    return this._request('POST', '/admin/master-locations', loc);
+  }
+
+  async getExpenseCategories() {
+    return this._request('GET', '/admin/expense-categories');
+  }
+  async createExpenseCategory(cat) {
+    return this._request('POST', '/admin/expense-categories', cat);
+  }
+
+  async getVendors() {
+    return this._request('GET', '/admin/vendors');
+  }
+  async createVendor(vendor) {
+    return this._request('POST', '/admin/vendors', vendor);
+  }
+
+  async getGlobalSettings() {
+    return this._request('GET', '/admin/settings');
+  }
+  async createGlobalSetting(setting) {
+    return this._request('POST', '/admin/settings', setting);
+  }
+
+  async getCommonPages() {
+    return this._request('GET', '/admin/common-pages');
+  }
+  async createCommonPage(page) {
+    return this._request('POST', '/admin/common-pages', page);
+  }
+
+
+  async getTransporters() {
+    return this._request('GET', '/admin/transporters');
+  }
+  async createTransporter(transporter) {
+    return this._request('POST', '/admin/transporters', transporter);
+  }
+  async deleteTransporter(id) {
+    return this._request('DELETE', `/admin/transporters/${id}`);
+  }
+
+  async getCountries() {
+    return this._request('GET', '/admin/countries');
+  }
+  async createCountry(country) {
+    return this._request('POST', '/admin/countries', country);
+  }
+  async deleteCountry(id) {
+    return this._request('DELETE', `/admin/countries/${id}`);
+  }
+
+  async getAccessLogs() {
+    return this._request('GET', '/admin/access-logs');
+  }
+
+
+
 }
 
 // Singleton instance

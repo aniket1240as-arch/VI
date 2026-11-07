@@ -4,8 +4,8 @@ import { LogIn, Mail, Lock, AlertCircle, Wheat } from 'lucide-react';
 
 export default function LoginPage() {
   const { login } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('admin@soilexlifescience.com');
+  const [password, setPassword] = useState('admin123');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 

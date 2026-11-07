@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
 import MainDashboard from '../dashboard/MainDashboard';
+import ImportDashboard from '../dashboard/ImportDashboard';
 import HrDashboard from '../hr/HrDashboard';
 import EmployeeList from '../employees/EmployeeList';
 import TradeView from '../trade/TradeView';
@@ -20,18 +21,28 @@ import { useAuth } from '../../context/AuthContext';
 import ErrorBoundary from '../common/ErrorBoundary';
 import ProcurementView from '../procurement/ProcurementView';
 import FinanceView from '../finance/FinanceView';
+import AssetManagement from '../assets/AssetManagement';
+import WarehouseInventory from '../inventory/WarehouseInventory';
+import OrderExecutionView from '../operations/OrderExecutionView';
 
 export default function AppShell() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState(() => {
     return user?.role === 'EMPLOYEE' ? 'employee_portal' : 'main';
   });
+  const [activeSubTab, setActiveSubTab] = useState(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  const handleSelectTab = (tab, subTab = null) => {
+    setActiveTab(tab);
+    setActiveSubTab(subTab);
+  };
 
   const getModuleTitle = (tab) => {
     switch (tab) {
       case 'employee_portal': return 'EMPLOYEE SELF SERVICE & DAILY HOURS PORTAL';
-      case 'main': return 'SOILEX EXECUTIVE OVERVIEW';
+      case 'main': return 'EXPORT ADMIN DASHBOARD';
+      case 'import_dashboard': return 'IMPORT ENTERPRISE DASHBOARD';
       case 'hr_dashboard':
       case 'hr_dashboard_tab': return 'HR & WORKFORCE DASHBOARD';
       case 'employees': return 'SOLEX EMPLOYEE DIRECTORY';
@@ -43,6 +54,9 @@ export default function AppShell() {
       case 'transactions': return 'COMMERCIAL TRADE TRANSACTIONS';
       case 'attendance': return 'ATTENDANCE & LEAVE MASTER';
       case 'payroll': return 'PAYROLL & SALARY SLIPS';
+      case 'assets': return 'ENTERPRISE ASSET MANAGEMENT';
+      case 'inventory': return 'MULTI-HUB WAREHOUSE & COMMODITY INVENTORY';
+      case 'operations': return 'OPERATIONS & ORDER EXECUTION';
       case 'buyers': return 'GLOBAL BUYERS & CONSIGNEES';
       case 'suppliers': return 'CERTIFIED FARMS & SUPPLIERS';
       case 'brokers': return 'TRADE BROKERS NETWORK';
@@ -79,13 +93,13 @@ export default function AppShell() {
           </p>
           <div className="flex items-center justify-center space-x-3 pt-2">
             <button
-              onClick={() => setActiveTab('employee_portal')}
+              onClick={() => handleSelectTab('employee_portal')}
               className="px-4 py-2 bg-[#1E40AF] hover:bg-blue-800 text-white rounded-lg text-xs font-bold transition-colors shadow-sm"
             >
               Go to My Portal
             </button>
             <button
-              onClick={() => setActiveTab('employees')}
+              onClick={() => handleSelectTab('employees')}
               className="px-4 py-2 border border-[#E2E8F0] hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold transition-colors"
             >
               Workforce Directory (Static)
@@ -97,27 +111,29 @@ export default function AppShell() {
 
     switch (activeTab) {
       case 'employee_portal':
-        return <EmployeePortal onNavigate={(tab) => setActiveTab(tab)} />;
+        return <EmployeePortal onNavigate={handleSelectTab} />;
       case 'calendar':
         return <RealtimeCalendar />;
       case 'main':
-        return <MainDashboard onNavigate={(tab) => setActiveTab(tab)} />;
+        return <MainDashboard onNavigate={handleSelectTab} />;
+      case 'import_dashboard':
+        return <ImportDashboard onNavigate={handleSelectTab} />;
       case 'hr_dashboard':
       case 'hr_dashboard_tab':
-        return <HrDashboard onNavigate={(tab) => setActiveTab(tab)} />;
+        return <HrDashboard onNavigate={handleSelectTab} />;
       case 'employees':
         return <EmployeeList />;
       case 'export':
-        return <TradeView type="export" />;
+        return <TradeView type="export" initialTab={activeSubTab} />;
       case 'procurement':
-        return <ProcurementView />;
+        return <ProcurementView initialSubTab={activeSubTab} />;
       case 'finance':
       case 'sales_orders':
-        return <FinanceView />;
+        return <FinanceView initialSubTab={activeSubTab} />;
       case 'import':
-        return <TradeView type="import" />;
+        return <TradeView type="import" initialTab={activeSubTab} />;
       case 'transactions':
-        return <TradeView type="transactions" />;
+        return <TradeView type="transactions" initialTab={activeSubTab} />;
       case 'products':
         return <ProductCatalog />;
       case 'buyers':
@@ -130,6 +146,12 @@ export default function AppShell() {
         return <AttendanceView />;
       case 'payroll':
         return <PayrollView />;
+      case 'assets':
+        return <AssetManagement />;
+      case 'inventory':
+        return <WarehouseInventory initialTab={activeSubTab} />;
+      case 'operations':
+        return <OrderExecutionView initialTab={activeSubTab} />;
       case 'todo':
       case 'workspace':
         return <TodoPlanner isMyDay={false} />;
@@ -140,25 +162,25 @@ export default function AppShell() {
       case 'visits':
         return <ReportsView isVisits={true} />;
       case 'masters':
-        return <MastersAdminView viewType="masters" />;
+        return <MastersAdminView viewType="masters" initialTab={activeSubTab} />;
       case 'user_mgmt':
         return <MastersAdminView viewType="users" />;
       case 'recruitment':
-        return <RecruitmentView onNavigate={(tab) => setActiveTab(tab)} />;
+        return <RecruitmentView onNavigate={handleSelectTab} />;
       case 'performance':
-        return <PerformanceView onNavigate={(tab) => setActiveTab(tab)} />;
+        return <PerformanceView onNavigate={handleSelectTab} />;
       default:
-        return <MainDashboard onNavigate={(tab) => setActiveTab(tab)} />;
+        return <MainDashboard onNavigate={handleSelectTab} />;
     }
   };
-
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex">
       {/* Sidebar Navigation */}
       <Sidebar 
         activeTab={activeTab}
-        onSelectTab={(tab) => setActiveTab(tab)}
+        activeSubTab={activeSubTab}
+        onSelectTab={handleSelectTab}
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
       />
@@ -166,20 +188,20 @@ export default function AppShell() {
       {/* Main Content Area */}
       <div 
         className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${
-          isSidebarCollapsed ? 'ml-[72px]' : 'ml-[260px]'
+          isSidebarCollapsed ? 'ml-[72px]' : 'ml-[264px]'
         }`}
       >
         <Navbar 
           currentModule={getModuleTitle(activeTab)}
-          onSelectModule={(tab) => setActiveTab(tab)}
+          onSelectModule={handleSelectTab}
           isSidebarCollapsed={isSidebarCollapsed}
         />
 
         <main className="flex-1">
           <ErrorBoundary
-            key={activeTab}
-            fallbackMessage={`An unexpected issue occurred while rendering this module. You can reload or navigate back to the home overview.`}
-            onNavigateHome={() => setActiveTab(user?.role === 'EMPLOYEE' ? 'employee_portal' : 'main')}
+            key={`${activeTab}-${activeSubTab || 'root'}`}
+            fallbackMessage="An unexpected issue occurred while rendering this module. You can reload or navigate back to the home overview."
+            onNavigateHome={() => handleSelectTab(user?.role === 'EMPLOYEE' ? 'employee_portal' : 'main')}
           >
             {renderContent()}
           </ErrorBoundary>

@@ -6,6 +6,7 @@ import {
   Download, Printer, Building2, X
 } from 'lucide-react';
 import api from '../../services/api';
+import DataTable from '../common/DataTable';
 
 const STATUS_COLORS = {
   DRAFT: 'bg-slate-100 text-slate-700',
@@ -26,8 +27,12 @@ const INCOTERMS = ['FOB', 'CIF', 'CFR', 'EXW', 'DDP', 'FCA'];
 const CURRENCIES = ['USD', 'EUR', 'INR', 'VND', 'AED'];
 const PAYMENT_TERMS_LIST = ['Net 30', 'Net 60', 'Advance / Escrow', 'CAD', 'LC at Sight', 'TT Wire'];
 
-export default function ProcurementView() {
-  const [activeSubTab, setActiveSubTab] = useState('dashboard');
+export default function ProcurementView({ initialSubTab = 'dashboard' }) {
+  const [activeSubTab, setActiveSubTab] = useState(initialSubTab || 'dashboard');
+
+  useEffect(() => {
+    if (initialSubTab) setActiveSubTab(initialSubTab);
+  }, [initialSubTab]);
   const [purchaseOrders, setPurchaseOrders] = useState([]);
   const [grns, setGrns] = useState([]);
   const [summary, setSummary] = useState(null);
@@ -353,31 +358,136 @@ function ProcurementDashboard({ summary, onNavigate }) {
 function PurchaseOrderList({ orders, statusFilter, onFilterChange, onSelect, onStatusUpdate, onCreateNew, onViewPdf, onExportCsv }) {
   const statusOptions = ['ALL', 'DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'SENT', 'PARTIALLY_RECEIVED', 'FULLY_RECEIVED', 'CLOSED', 'CANCELLED'];
 
+  const columns = [
+    {
+      key: 'po_number',
+      header: 'PO NUMBER',
+      render: (val, row) => (
+        <button
+          onClick={() => onSelect(row)}
+          className="text-xs font-bold text-[#1E40AF] hover:underline font-mono"
+        >
+          {val}
+        </button>
+      )
+    },
+    {
+      key: 'supplier_name',
+      header: 'SUPPLIER',
+      render: (val) => <span className="font-semibold text-slate-800 truncate block max-w-[200px]">{val}</span>
+    },
+    {
+      key: 'order_date',
+      header: 'ORDER DATE',
+      render: (val) => <span className="font-mono text-slate-600">{val}</span>
+    },
+    {
+      key: 'expected_delivery_date',
+      header: 'DELIVERY',
+      render: (val) => <span className="font-mono text-slate-600">{val || '—'}</span>
+    },
+    {
+      key: 'incoterms',
+      header: 'INCOTERMS',
+      render: (val) => (
+        <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
+          {val}
+        </span>
+      )
+    },
+    {
+      key: 'grand_total',
+      header: 'TOTAL VALUE',
+      align: 'right',
+      render: (val) => <span className="font-bold text-slate-900 font-mono">${(val || 0).toLocaleString()}</span>
+    },
+    {
+      key: 'status',
+      header: 'STATUS',
+      render: (val) => (
+        <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${STATUS_COLORS[val] || 'bg-slate-100 text-slate-700'}`}>
+          {val?.replace(/_/g, ' ')}
+        </span>
+      )
+    },
+    {
+      key: 'actions',
+      header: 'ACTIONS',
+      sortable: false,
+      render: (_, po) => (
+        <div className="flex items-center space-x-1 flex-wrap gap-y-1">
+          {po.status === 'DRAFT' && (
+            <>
+              <button
+                onClick={() => onStatusUpdate(po.id, 'PENDING_APPROVAL')}
+                className="text-[10px] font-bold text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 px-2 py-1 rounded transition whitespace-nowrap"
+                title="Submit for Approval"
+              >
+                Submit
+              </button>
+              <button
+                onClick={() => onStatusUpdate(po.id, 'CANCELLED')}
+                className="text-[10px] font-bold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-2 py-1 rounded transition whitespace-nowrap"
+                title="Cancel PO"
+              >
+                Cancel
+              </button>
+            </>
+          )}
+          {po.status === 'PENDING_APPROVAL' && (
+            <>
+              <button
+                onClick={() => onStatusUpdate(po.id, 'APPROVED')}
+                className="text-[10px] font-bold text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-2 py-1 rounded transition whitespace-nowrap"
+                title="Approve PO"
+              >
+                Approve
+              </button>
+              <button
+                onClick={() => onStatusUpdate(po.id, 'REJECTED')}
+                className="text-[10px] font-bold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-2 py-1 rounded transition whitespace-nowrap"
+                title="Reject PO"
+              >
+                Reject
+              </button>
+            </>
+          )}
+          {po.status === 'APPROVED' && (
+            <button
+              onClick={() => onStatusUpdate(po.id, 'SENT')}
+              className="text-[10px] font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded transition whitespace-nowrap"
+              title="Mark as Sent to Supplier"
+            >
+              Send
+            </button>
+          )}
+          <button
+            onClick={() => onViewPdf(po)}
+            className="text-[10px] font-bold text-indigo-700 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded transition whitespace-nowrap"
+            title="View Official Purchase Order PDF"
+          >
+            PDF
+          </button>
+        </div>
+      )
+    }
+  ];
+
   return (
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h2 className="text-lg font-bold text-slate-800">Purchase Orders</h2>
-          <p className="text-xs text-slate-500 mt-0.5">{orders.length} purchase orders</p>
+          <p className="text-xs text-slate-500 mt-0.5">{orders.length} purchase orders recorded</p>
         </div>
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={onExportCsv}
-            className="flex items-center space-x-1.5 px-3.5 py-2.5 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold transition shadow-sm"
-            title="Export Purchase Orders to CSV"
-          >
-            <Download className="w-4 h-4 text-slate-500" />
-            <span>EXPORT CSV</span>
-          </button>
-          <button
-            onClick={onCreateNew}
-            className="flex items-center space-x-2 px-4 py-2.5 bg-[#1E40AF] text-white rounded-lg text-xs font-bold hover:bg-blue-800 transition shadow-sm"
-          >
-            <Plus className="w-4 h-4" />
-            <span>NEW PURCHASE ORDER</span>
-          </button>
-        </div>
+        <button
+          onClick={onCreateNew}
+          className="flex items-center space-x-2 px-4 py-2 bg-[#1E40AF] text-white rounded-lg text-xs font-bold hover:bg-blue-800 transition shadow-sm"
+        >
+          <Plus className="w-4 h-4 text-[#FDE68A]" />
+          <span>NEW PURCHASE ORDER</span>
+        </button>
       </div>
 
       {/* Filters */}
@@ -397,245 +507,15 @@ function PurchaseOrderList({ orders, statusFilter, onFilterChange, onSelect, onS
         ))}
       </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <table className="w-full">
-          <thead>
-            <tr className="bg-slate-50 border-b border-slate-200">
-              {['PO Number', 'Supplier', 'Order Date', 'Delivery', 'Incoterms', 'Total', 'Status', 'Actions'].map(h => (
-                <th key={h} className="text-left px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {orders.map(po => (
-              <tr key={po.id} className="hover:bg-blue-50/40 transition-colors">
-                <td className="px-4 py-3">
-                  <button
-                    onClick={() => onSelect(po)}
-                    className="text-xs font-bold text-[#1E40AF] hover:underline"
-                  >
-                    {po.po_number}
-                  </button>
-                </td>
-                <td className="px-4 py-3">
-                  <p className="text-xs font-semibold text-slate-700 truncate max-w-[200px]">{po.supplier_name}</p>
-                </td>
-                <td className="px-4 py-3 text-xs text-slate-600">{po.order_date}</td>
-                <td className="px-4 py-3 text-xs text-slate-600">{po.expected_delivery_date || '—'}</td>
-                <td className="px-4 py-3">
-                  <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">{po.incoterms}</span>
-                </td>
-                <td className="px-4 py-3 text-xs font-bold text-slate-800">${(po.grand_total || 0).toLocaleString()}</td>
-                <td className="px-4 py-3">
-                  <span className={`text-[10px] font-bold px-2 py-1 rounded ${STATUS_COLORS[po.status] || 'bg-slate-100'}`}>
-                    {po.status?.replace(/_/g, ' ')}
-                  </span>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center space-x-1 flex-wrap gap-y-1">
-                    {po.status === 'DRAFT' && (
-                      <>
-                        <button
-                          onClick={() => onStatusUpdate(po.id, 'PENDING_APPROVAL')}
-                          className="text-[10px] font-bold text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 px-2 py-1 rounded transition whitespace-nowrap"
-                          title="Submit for Approval"
-                        >
-                          Submit
-                        </button>
-                        <button
-                          onClick={() => onStatusUpdate(po.id, 'CANCELLED')}
-                          className="text-[10px] font-bold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-2 py-1 rounded transition whitespace-nowrap"
-                          title="Cancel PO"
-                        >
-                          Cancel
-                        </button>
-                      </>
-                    )}
-                    {po.status === 'PENDING_APPROVAL' && (
-                      <>
-                        <button
-                          onClick={() => onStatusUpdate(po.id, 'APPROVED')}
-                          className="text-[10px] font-bold text-green-600 hover:text-green-700 bg-green-50 hover:bg-green-100 px-2 py-1 rounded transition whitespace-nowrap"
-                          title="Approve PO"
-                        >
-                          Approve
-                        </button>
-                        <button
-                          onClick={() => onStatusUpdate(po.id, 'REJECTED')}
-                          className="text-[10px] font-bold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-1 rounded transition whitespace-nowrap"
-                          title="Reject PO"
-                        >
-                          Reject
-                        </button>
-                        <button
-                          onClick={() => onStatusUpdate(po.id, 'CANCELLED')}
-                          className="text-[10px] font-bold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-2 py-1 rounded transition whitespace-nowrap"
-                          title="Cancel PO"
-                        >
-                          Cancel
-                        </button>
-                      </>
-                    )}
-                    {po.status === 'APPROVED' && (
-                      <>
-                        <button
-                          onClick={() => onStatusUpdate(po.id, 'SENT')}
-                          className="text-[10px] font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded transition flex items-center space-x-1 whitespace-nowrap"
-                          title="Send to Supplier"
-                        >
-                          <Send className="w-3 h-3" />
-                          <span>Send</span>
-                        </button>
-                        <button
-                          onClick={() => onStatusUpdate(po.id, 'FULLY_RECEIVED')}
-                          className="text-[10px] font-bold text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-2 py-1 rounded transition whitespace-nowrap"
-                          title="Receive All Items"
-                        >
-                          Receive Full
-                        </button>
-                        <button
-                          onClick={() => onStatusUpdate(po.id, 'PARTIALLY_RECEIVED')}
-                          className="text-[10px] font-bold text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 px-2 py-1 rounded transition whitespace-nowrap"
-                          title="Receive Partial Items"
-                        >
-                          Receive Partial
-                        </button>
-                        <button
-                          onClick={() => onStatusUpdate(po.id, 'CANCELLED')}
-                          className="text-[10px] font-bold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-2 py-1 rounded transition whitespace-nowrap"
-                          title="Cancel PO"
-                        >
-                          Cancel
-                        </button>
-                      </>
-                    )}
-                    {po.status === 'SENT' && (
-                      <>
-                        <button
-                          onClick={() => onStatusUpdate(po.id, 'PARTIALLY_RECEIVED')}
-                          className="text-[10px] font-bold text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 px-2 py-1 rounded transition whitespace-nowrap"
-                          title="Receive Partial Shipment"
-                        >
-                          Receive Partial
-                        </button>
-                        <button
-                          onClick={() => onStatusUpdate(po.id, 'FULLY_RECEIVED')}
-                          className="text-[10px] font-bold text-green-600 hover:text-green-700 bg-green-50 hover:bg-green-100 px-2 py-1 rounded transition whitespace-nowrap"
-                          title="Receive Full Shipment"
-                        >
-                          Receive Full
-                        </button>
-                        <button
-                          onClick={() => onStatusUpdate(po.id, 'CANCELLED')}
-                          className="text-[10px] font-bold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-2 py-1 rounded transition whitespace-nowrap"
-                          title="Cancel PO"
-                        >
-                          Cancel
-                        </button>
-                      </>
-                    )}
-                    {po.status === 'PARTIALLY_RECEIVED' && (
-                      <>
-                        <button
-                          onClick={() => onStatusUpdate(po.id, 'FULLY_RECEIVED')}
-                          className="text-[10px] font-bold text-green-600 hover:text-green-700 bg-green-50 hover:bg-green-100 px-2 py-1 rounded transition whitespace-nowrap"
-                          title="Complete Receiving Remaining Items"
-                        >
-                          Receive Full
-                        </button>
-                        <button
-                          onClick={() => onStatusUpdate(po.id, 'CLOSED')}
-                          className="text-[10px] font-bold text-slate-600 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded transition whitespace-nowrap"
-                          title="Close Short Shipment"
-                        >
-                          Close
-                        </button>
-                        <button
-                          onClick={() => onStatusUpdate(po.id, 'CANCELLED')}
-                          className="text-[10px] font-bold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-2 py-1 rounded transition whitespace-nowrap"
-                          title="Cancel Balance"
-                        >
-                          Cancel
-                        </button>
-                      </>
-                    )}
-                    {po.status === 'FULLY_RECEIVED' && (
-                      <>
-                        <button
-                          onClick={() => onStatusUpdate(po.id, 'CLOSED')}
-                          className="text-[10px] font-bold text-slate-600 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded transition whitespace-nowrap"
-                          title="Close Completed PO"
-                        >
-                          Close
-                        </button>
-                        <button
-                          onClick={() => onStatusUpdate(po.id, 'CANCELLED')}
-                          className="text-[10px] font-bold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-2 py-1 rounded transition whitespace-nowrap"
-                          title="Cancel PO"
-                        >
-                          Cancel
-                        </button>
-                      </>
-                    )}
-                    {po.status === 'REJECTED' && (
-                      <>
-                        <button
-                          onClick={() => onStatusUpdate(po.id, 'DRAFT')}
-                          className="text-[10px] font-bold text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 px-2 py-1 rounded transition whitespace-nowrap"
-                          title="Reopen as Draft"
-                        >
-                          Reopen
-                        </button>
-                        <button
-                          onClick={() => onStatusUpdate(po.id, 'CANCELLED')}
-                          className="text-[10px] font-bold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-2 py-1 rounded transition whitespace-nowrap"
-                          title="Cancel PO"
-                        >
-                          Cancel
-                        </button>
-                      </>
-                    )}
-                    {po.status === 'CANCELLED' && (
-                      <button
-                        onClick={() => onStatusUpdate(po.id, 'DRAFT')}
-                        className="text-[10px] font-bold text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 px-2 py-1 rounded transition whitespace-nowrap"
-                        title="Reopen as Draft"
-                      >
-                        Reopen
-                      </button>
-                    )}
-                    <button
-                      onClick={() => onSelect(po)}
-                      className="text-[10px] font-bold text-slate-500 hover:text-[#1E40AF] bg-slate-50 hover:bg-blue-50 px-2 py-1 rounded transition"
-                      title="View Details"
-                    >
-                      <Eye className="w-3.5 h-3.5" />
-                    </button>
-                    {onViewPdf && (
-                      <button
-                        onClick={() => onViewPdf(po)}
-                        className="text-[10px] font-bold text-[#1E40AF] hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded transition flex items-center space-x-1"
-                        title="View & Download PDF"
-                      >
-                        <Printer className="w-3.5 h-3.5" />
-                        <span>PDF</span>
-                      </button>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {orders.length === 0 && (
-              <tr>
-                <td colSpan={8} className="px-4 py-12 text-center text-sm text-slate-400">
-                  No purchase orders found
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      {/* Production Universal DataTable */}
+      <DataTable
+        columns={columns}
+        data={orders}
+        title="Purchase_Orders_Registry"
+        searchPlaceholder="Search PO #, supplier, incoterms, total..."
+        onAdd={onCreateNew}
+        addLabel="+ New PO"
+      />
     </div>
   );
 }
@@ -644,6 +524,48 @@ function PurchaseOrderList({ orders, statusFilter, onFilterChange, onSelect, onS
 // ═══════════ GRN LIST ═══════════
 
 function GRNList({ grns, purchaseOrders, onCreateNew }) {
+  const grnColumns = [
+    {
+      key: 'grn_number',
+      header: 'GRN NUMBER',
+      render: (val) => <span className="text-xs font-bold text-[#1E40AF] font-mono">{val}</span>
+    },
+    {
+      key: 'po_number',
+      header: 'PO REFERENCE',
+      render: (val) => <span className="font-mono font-semibold text-slate-700">{val}</span>
+    },
+    {
+      key: 'supplier_name',
+      header: 'SUPPLIER',
+      render: (val) => <span className="font-semibold text-slate-800">{val}</span>
+    },
+    {
+      key: 'receipt_date',
+      header: 'RECEIPT DATE',
+      render: (val) => <span className="font-mono text-slate-600">{val}</span>
+    },
+    {
+      key: 'receiving_warehouse',
+      header: 'WAREHOUSE HUB',
+      render: (val) => <span className="text-slate-700 font-medium">{val}</span>
+    },
+    {
+      key: 'transporter',
+      header: 'TRANSPORTER',
+      render: (val) => <span className="text-slate-600">{val || '—'}</span>
+    },
+    {
+      key: 'status',
+      header: 'STATUS',
+      render: (val) => (
+        <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${STATUS_COLORS[val] || 'bg-slate-100 text-slate-700'}`}>
+          {val}
+        </span>
+      )
+    }
+  ];
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -653,48 +575,21 @@ function GRNList({ grns, purchaseOrders, onCreateNew }) {
         </div>
         <button
           onClick={onCreateNew}
-          className="flex items-center space-x-2 px-4 py-2.5 bg-[#1E40AF] text-white rounded-lg text-xs font-bold hover:bg-blue-800 transition shadow-sm"
+          className="flex items-center space-x-2 px-4 py-2 bg-[#1E40AF] text-white rounded-lg text-xs font-bold hover:bg-blue-800 transition shadow-sm"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-4 h-4 text-[#FDE68A]" />
           <span>NEW GRN</span>
         </button>
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <table className="w-full">
-          <thead>
-            <tr className="bg-slate-50 border-b border-slate-200">
-              {['GRN Number', 'PO Reference', 'Supplier', 'Receipt Date', 'Warehouse', 'Transporter', 'Status'].map(h => (
-                <th key={h} className="text-left px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {grns.map(grn => (
-              <tr key={grn.id} className="hover:bg-blue-50/40 transition-colors">
-                <td className="px-4 py-3 text-xs font-bold text-[#1E40AF]">{grn.grn_number}</td>
-                <td className="px-4 py-3 text-xs font-semibold text-slate-600">{grn.po_number}</td>
-                <td className="px-4 py-3 text-xs text-slate-700">{grn.supplier_name}</td>
-                <td className="px-4 py-3 text-xs text-slate-600">{grn.receipt_date}</td>
-                <td className="px-4 py-3 text-xs text-slate-600">{grn.receiving_warehouse}</td>
-                <td className="px-4 py-3 text-xs text-slate-600">{grn.transporter || '—'}</td>
-                <td className="px-4 py-3">
-                  <span className={`text-[10px] font-bold px-2 py-1 rounded ${STATUS_COLORS[grn.status] || 'bg-slate-100'}`}>
-                    {grn.status}
-                  </span>
-                </td>
-              </tr>
-            ))}
-            {grns.length === 0 && (
-              <tr>
-                <td colSpan={7} className="px-4 py-12 text-center text-sm text-slate-400">
-                  No goods receipt notes found
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      <DataTable
+        columns={grnColumns}
+        data={grns}
+        title="Goods_Receipt_Notes_Registry"
+        searchPlaceholder="Search GRN #, PO ref, supplier, warehouse..."
+        onAdd={onCreateNew}
+        addLabel="+ New GRN"
+      />
 
       {/* GRN Items Detail */}
       {grns.filter(g => g.items && g.items.length > 0).map(grn => (

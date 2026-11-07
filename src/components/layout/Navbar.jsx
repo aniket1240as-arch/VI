@@ -120,12 +120,33 @@ export default function Navbar({ currentModule, onSelectModule, isSidebarCollaps
           LEFT: MODULE BREADCRUMB & COMMODITY CONTEXT
       ───────────────────────────────────────────────────────────── */}
       <div className="flex items-center space-x-3">
-        {/* Module Pill */}
-        <div className="relative group">
-          <div className="flex items-center space-x-2 bg-gradient-to-r from-[#1E40AF] to-[#1E3A8A] text-white text-xs font-bold uppercase px-3.5 py-2 rounded-lg shadow-sm border border-blue-900/20">
-            <span className="w-2 h-2 rounded-full bg-[#D97706] animate-pulse"></span>
-            <span className="tracking-wide">{currentModule || 'EXECUTIVE OVERVIEW'}</span>
-          </div>
+        {/* Live Staging Dashboard Switcher Pill */}
+        <div className="relative">
+          <select
+            value={
+              currentModule.includes('IMPORT') ? 'import_dashboard' :
+              currentModule.includes('WAREHOUSE') || currentModule.includes('INVENTORY') ? 'inventory' :
+              currentModule.includes('EXECUTION') ? 'operations' :
+              currentModule.includes('PROCUREMENT') ? 'procurement' :
+              currentModule.includes('FINANCE') ? 'finance' :
+              currentModule.includes('SYSTEM MASTERS') ? 'masters' :
+              currentModule.includes('HR') ? 'hr_dashboard' :
+              'main'
+            }
+            onChange={(e) => onSelectModule(e.target.value)}
+            className="flex items-center space-x-2 bg-gradient-to-r from-[#1E40AF] to-indigo-800 text-white text-xs font-bold uppercase px-3.5 py-2 pr-8 rounded-lg shadow-sm border border-blue-900/20 cursor-pointer appearance-none focus:outline-none focus:ring-2 focus:ring-blue-400"
+          >
+            <option value="main" className="bg-slate-900 text-white font-bold">EXPORT DASHBOARD ▾</option>
+            <option value="import_dashboard" className="bg-slate-900 text-white font-bold">IMPORT DASHBOARD ▾</option>
+            <option value="export" className="bg-slate-900 text-white font-bold">EXPORT OPERATIONS ▾</option>
+            <option value="procurement" className="bg-slate-900 text-white font-bold">PROCUREMENT & PO ▾</option>
+            <option value="operations" className="bg-slate-900 text-white font-bold">ORDER EXECUTION ▾</option>
+            <option value="inventory" className="bg-slate-900 text-white font-bold">WAREHOUSE & INVENTORY ▾</option>
+            <option value="finance" className="bg-slate-900 text-white font-bold">FINANCE & COMMERCIAL GL ▾</option>
+            <option value="masters" className="bg-slate-900 text-white font-bold">SYSTEM MASTERS ▾</option>
+            <option value="hr_dashboard" className="bg-slate-900 text-white font-bold">HR WORKFORCE ▾</option>
+          </select>
+          <ChevronDown className="w-3.5 h-3.5 text-white/90 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
         </div>
 
         {/* Commodity Category Dropdown */}

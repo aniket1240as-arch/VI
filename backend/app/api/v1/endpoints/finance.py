@@ -497,3 +497,89 @@ def get_finance_summary():
         recent_invoices=recent_invoices,
         ar_aging=ar_aging,
     ))
+
+
+# ─────────────── Debit / Credit Notes (Live System Reverse Engineered) ───────────────
+
+@router.get("/notes", response_model=ApiResponse[List[dict]])
+def get_debit_credit_notes(
+    note_type: Optional[str] = Query(None, alias="type"),
+    party_type: Optional[str] = Query(None),
+    search: Optional[str] = Query(None)
+):
+    from ....core.database import db_manager
+    sql = "SELECT * FROM debit_credit_notes WHERE 1=1"
+    params = []
+    
+    if note_type and note_type != "ALL":
+        sql += " AND note_type = ?"
+        params.append(note_type)
+    if party_type and party_type != "ALL":
+        sql += " AND party_type = ?"
+        params.append(party_type)
+    if search and isinstance(search, str) and search.strip():
+        sql += " AND (note_no ILIKE ? OR party_name ILIKE ? OR invoice_ref ILIKE ?)"
+        s = f"%{search.strip()}%"
+        params.extend([s, s, s])
+        
+    sql += " ORDER BY date DESC"
+    notes = db_manager.execute_query(sql, params)
+    return ApiResponse(data=notes, message="Debit/Credit notes fetched successfully")
+
+@router.post("/notes", response_model=ApiResponse[dict], status_code=201)
+def create_debit_credit_note(payload: dict):
+    from ....core.database import db_manager
+    import uuid
+    new_id = f"NOTE-{uuid.uuid4().hex[:6].upper()}"
+    sql = """
+    INSERT INTO debit_credit_notes (id, note_no, note_type, date, party_type, party_name, invoice_ref, amount, currency, reason, payment_status)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """
+    db_manager.execute_write(
+        sql,
+        [
+            new_id,
+            payload.get("note_no", f"NOTE-{int(time.time())%100000}"),
+            payload.get("note_type", "DEBIT_NOTE"),
+            payload.get("date", datetime.now().strftime("%Y-%m-%d")),
+            payload.get("party_type", "BUYER"),
+            payload.get("party_name", ""),
+            payload.get("invoice_ref", ""),
+            float(payload.get("amount", 0.0)),
+            payload.get("currency", "USD"),
+            payload.get("reason", ""),
+            payload.get("payment_status", "UNSETTLED")
+        ]
+    )
+    row = db_manager.execute_one("SELECT * FROM debit_credit_notes WHERE id = ?", [new_id])
+    return ApiResponse(data=row, message="Note created successfully")
+
+@router.get("/buyer-aging", response_model=ApiResponse[dict])
+def get_buyer_aging_report():
+    customers = [
+        {"customer": "WETHREE GROUP LTD", "current_usd": 42500.0, "days_30": 18200.0, "days_60": 0.0, "days_90_plus": 0.0, "total": 60700.0},
+        {"customer": "SANABEL AL ULA GENERAL TRADING", "current_usd": 68900.0, "days_30": 34100.0, "days_60": 12400.0, "days_90_plus": 0.0, "total": 115400.0},
+        {"customer": "BOMBAY FOODSTUFF TRADING CO", "current_usd": 31200.0, "days_30": 0.0, "days_60": 0.0, "days_90_plus": 0.0, "total": 31200.0},
+        {"customer": "AL-BARAKA GRAINS & SPICES", "current_usd": 0.0, "days_30": 15600.0, "days_60": 8900.0, "days_90_plus": 4500.0, "total": 29000.0},
+        {"customer": "MEDITERRANEAN AGRO COMMODITIES", "current_usd": 85000.0, "days_30": 0.0, "days_60": 0.0, "days_90_plus": 0.0, "total": 85000.0},
+    ]
+    
+    total_current = sum(c["current_usd"] for c in customers)
+    total_30 = sum(c["days_30"] for c in customers)
+    total_60 = sum(c["days_60"] for c in customers)
+    total_90 = sum(c["days_90_plus"] for c in customers)
+    grand_total = sum(c["total"] for c in customers)
+    
+    return ApiResponse(
+        data={
+            "breakdown": customers,
+            "summary": {
+                "totalCurrent": total_current,
+                "total30Days": total_30,
+                "total60Days": total_60,
+                "total90Plus": total_90,
+                "grandTotal": grand_total
+            }
+        },
+        message="Buyer Aging Report calculated"
+    )

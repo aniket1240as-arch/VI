@@ -20,6 +20,7 @@ import {
   LogOut
 } from 'lucide-react';
 import api from '../../services/api';
+import DataTable from '../common/DataTable';
 import { useAuth } from '../../context/AuthContext';
 
 const FALLBACK_EMPLOYEES = [
@@ -408,229 +409,189 @@ export default function EmployeeList() {
         </div>
       )}
 
-      {/* Department Filter Tabs */}
-      <div className="flex flex-wrap items-center gap-1.5 bg-slate-100 p-1 rounded-lg w-fit">
-        {DEPARTMENTS.map(dept => (
-          <button
-            key={dept}
-            onClick={() => setActiveDept(dept)}
-            className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
-              activeDept === dept
-                ? 'bg-[#1E40AF] text-white shadow-sm'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-            }`}
-          >
-            {dept}
-          </button>
-        ))}
-      </div>
-
       {/* Main Table Container Card */}
-      <div className="bg-white rounded-lg border border-[#E2E8F0] shadow-card overflow-hidden">
-        {/* Toolbar */}
-        <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100">
-          <div className="flex items-center space-x-2 text-xs font-semibold text-slate-600">
-            <span>SHOW</span>
-            <select
-              value={entriesPerPage}
-              onChange={(e) => setEntriesPerPage(Number(e.target.value))}
-              aria-label="Entries per page"
-              className="bg-white border border-[#E2E8F0] rounded px-2.5 py-1 font-bold text-slate-800 focus:outline-none focus:border-[#1E40AF] cursor-pointer"
-            >
-              <option value={10}>10</option>
-              <option value={25}>25</option>
-              <option value={50}>50</option>
-            </select>
-            <span>ENTRIES</span>
-          </div>
-
-          <div className="relative w-full sm:w-72">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input 
-              type="text" 
-              placeholder="SEARCH BY NAME, CODE, DEPARTMENT..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-white border border-[#E2E8F0] rounded-md pl-9 pr-3 py-1.5 text-xs placeholder:text-slate-400 font-medium focus:outline-none focus:border-[#1E40AF] focus:ring-1 focus:ring-[#1E40AF] transition-all"
-            />
-          </div>
-        </div>
-
-        {/* Data Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-slate-700">
-            <thead className="bg-[#FAFAFA] border-b border-[#E2E8F0] text-[11px] font-bold uppercase tracking-wider text-slate-600">
-              <tr>
-                <th className="py-3 px-4">
-                  <div className="flex items-center space-x-1 cursor-pointer hover:text-slate-900">
-                    <span>EMP CODE</span>
-                    <ArrowUpDown className="w-3 h-3 text-slate-400" />
-                  </div>
-                </th>
-                <th className="py-3 px-4">
-                  <div className="flex items-center space-x-1 cursor-pointer hover:text-slate-900">
-                    <span>FULL NAME</span>
-                    <ArrowUpDown className="w-3 h-3 text-slate-400" />
-                  </div>
-                </th>
-                <th className="py-3 px-4">
-                  <div className="flex items-center space-x-1 cursor-pointer hover:text-slate-900">
-                    <span>DEPARTMENT</span>
-                    <ArrowUpDown className="w-3 h-3 text-slate-400" />
-                  </div>
-                </th>
-                <th className="py-3 px-4">
-                  <div className="flex items-center space-x-1 cursor-pointer hover:text-slate-900">
-                    <span>DESIGNATION</span>
-                    <ArrowUpDown className="w-3 h-3 text-slate-400" />
-                  </div>
-                </th>
-                <th className="py-3 px-4">BRANCH</th>
-                <th className="py-3 px-4">SHIFT</th>
-                <th className="py-3 px-4">JOIN DATE</th>
-                <th className="py-3 px-4 text-center">STATUS</th>
-                <th className="py-3 px-4 text-center">ACTIONS</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 font-medium">
-              {displayedEmployees.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="py-12 text-center text-slate-400 text-xs font-semibold">
-                    No employees found.
-                  </td>
-                </tr>
+      <DataTable
+        columns={[
+          {
+            key: 'employee_code',
+            header: 'EMP CODE',
+            render: (val, emp) => (
+              <button
+                onClick={() => { setSelectedEmployee(emp); setProfileTab('overview'); }}
+                className="font-mono font-bold text-[#1E40AF] hover:underline"
+              >
+                {val}
+              </button>
+            )
+          },
+          {
+            key: 'full_name',
+            header: 'FULL NAME',
+            render: (val, emp) => (
+              <span
+                onClick={() => { setSelectedEmployee(emp); setProfileTab('overview'); }}
+                className="font-bold text-slate-900 cursor-pointer hover:text-blue-700"
+              >
+                {val}
+              </span>
+            )
+          },
+          {
+            key: 'department',
+            header: 'DEPARTMENT',
+            render: (val) => <span className="text-slate-600 font-medium">{val}</span>
+          },
+          {
+            key: 'designation',
+            header: 'DESIGNATION',
+            render: (val) => <span className="font-semibold text-slate-800">{val}</span>
+          },
+          {
+            key: 'branch',
+            header: 'BRANCH',
+            render: (val) => <span className="text-slate-500">{val}</span>
+          },
+          {
+            key: 'shift',
+            header: 'SHIFT',
+            render: (val) => (
+              <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-[11px] font-semibold border border-slate-200">
+                {val}
+              </span>
+            )
+          },
+          {
+            key: 'join_date',
+            header: 'JOIN DATE',
+            render: (val) => <span className="font-mono text-slate-500 text-xs">{val}</span>
+          },
+          {
+            key: 'status',
+            header: 'STATUS',
+            align: 'center',
+            render: (val) => (
+              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                val === 'ACTIVE'
+                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                  : 'bg-slate-100 text-slate-500 border border-slate-200'
+              }`}>
+                {val}
+              </span>
+            )
+          },
+          {
+            key: 'actions',
+            header: 'ACTIONS',
+            sortable: false,
+            align: 'center',
+            render: (_, emp) => (
+              isEmployeeRole ? (
+                <button
+                  onClick={() => { setSelectedEmployee(emp); setProfileTab('overview'); }}
+                  className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-[#1E40AF] border border-blue-200 rounded text-[11px] font-bold transition-colors inline-flex items-center space-x-1 shadow-xs"
+                  title="View static details for this employee"
+                >
+                  <span>👁️</span>
+                  <span>Static Details</span>
+                </button>
               ) : (
-                displayedEmployees.map((emp) => (
-                  <tr 
-                    key={emp.id} 
-                    onClick={() => { setSelectedEmployee(emp); setProfileTab('overview'); }} 
-                    className="hover:bg-blue-50/40 transition-colors cursor-pointer"
+                <div className="flex items-center justify-center space-x-1">
+                  <button 
+                    onClick={() => handleOpenEdit(emp)} 
+                    title="Edit Employee Profile" 
+                    className="p-1.5 hover:bg-amber-100 rounded text-[#D97706] transition-colors"
                   >
-                    <td className="py-3 px-4 font-mono font-bold text-[#1E40AF] whitespace-nowrap">{emp.employee_code}</td>
-                    <td className="py-3 px-4 font-bold text-slate-900 whitespace-nowrap">{emp.full_name}</td>
-                    <td className="py-3 px-4 text-slate-600 whitespace-nowrap">{emp.department}</td>
-                    <td className="py-3 px-4 font-semibold text-slate-800 whitespace-nowrap">{emp.designation}</td>
-                    <td className="py-3 px-4 whitespace-nowrap text-slate-500">{emp.branch}</td>
-                    <td className="py-3 px-4 whitespace-nowrap">
-                      <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-[11px] font-semibold border border-slate-200">
-                        {emp.shift}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 whitespace-nowrap text-slate-500">{emp.join_date}</td>
-                    <td className="py-3 px-4 text-center whitespace-nowrap">
-                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                        emp.status === 'ACTIVE'
-                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                          : 'bg-slate-100 text-slate-500 border border-slate-200'
-                      }`}>
-                        {emp.status}
-                      </span>
-                    </td>
-                    <td onClick={(e) => e.stopPropagation()} className="py-3 px-4 text-center whitespace-nowrap">
-                      {isEmployeeRole ? (
-                        <button
-                          onClick={() => { setSelectedEmployee(emp); setProfileTab('overview'); }}
-                          className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-[#1E40AF] border border-blue-200 rounded text-[11px] font-bold transition-colors inline-flex items-center space-x-1 shadow-xs"
-                          title="View static details for this employee"
-                        >
-                          <span>👁️</span>
-                          <span>Static Details</span>
-                        </button>
-                      ) : (
-                        <div className="flex items-center justify-center space-x-1">
-                          <button 
-                            onClick={() => handleOpenEdit(emp)} 
-                            title="Edit Employee Profile" 
-                            className="p-1.5 hover:bg-amber-100 rounded text-[#D97706] transition-colors"
-                          >
-                            <Pencil className="w-3.5 h-3.5" />
-                          </button>
-                          <button 
-                            onClick={() => { setSelectedEmployee(emp); setProfileTab('onboarding'); }}
-                            title="View Documents & Onboarding Checklist" 
-                            className="p-1.5 hover:bg-blue-100 rounded text-[#1E40AF] transition-colors"
-                          >
-                            <Folder className="w-3.5 h-3.5" />
-                          </button>
-                          <button 
-                            onClick={() => { setSelectedEmployee(emp); setProfileTab('payroll'); }}
-                            title="Banking & Salary Details" 
-                            className="p-1.5 hover:bg-blue-100 rounded text-[#1E40AF] transition-colors"
-                          >
-                            <Building className="w-3.5 h-3.5" />
-                          </button>
-                          <button 
-                            onClick={() => { setSelectedEmployee(emp); setProfileTab('payroll'); }}
-                            title="Salary Slips & Disbursals" 
-                            className="p-1.5 hover:bg-amber-100 rounded text-[#D97706] transition-colors"
-                          >
-                            <Receipt className="w-3.5 h-3.5" />
-                          </button>
-                          <button 
-                            onClick={() => { setSelectedEmployee(emp); setProfileTab('compliance'); }}
-                            title="Food Safety & Health (ISO 22000)" 
-                            className="p-1.5 hover:bg-emerald-100 rounded text-emerald-600 transition-colors"
-                          >
-                            <ShieldAlert className="w-3.5 h-3.5" />
-                          </button>
-                          <button 
-                            onClick={() => { setSelectedEmployee(emp); setProfileTab('exit'); }}
-                            title="Exit Clearance & F&F Settlement" 
-                            className="p-1.5 hover:bg-amber-100 rounded text-amber-700 transition-colors"
-                          >
-                            <LogOut className="w-3.5 h-3.5" />
-                          </button>
-                          {deleteConfirmId === emp.id ? (
-                            <div className="flex items-center space-x-1">
-                              <button
-                                onClick={() => handleDeleteEmployee(emp.id)}
-                                disabled={saving}
-                                className="px-2 py-1 bg-red-600 text-white rounded text-[10px] font-bold hover:bg-red-700 disabled:opacity-50"
-                              >
-                                Confirm
-                              </button>
-                              <button
-                                onClick={() => setDeleteConfirmId(null)}
-                                className="px-2 py-1 border border-slate-200 text-slate-600 rounded text-[10px] font-bold hover:bg-slate-50"
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => setDeleteConfirmId(emp.id)}
-                              title="Delete Employee"
-                              className="p-1.5 hover:bg-red-100 rounded text-red-500 transition-colors"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination Footer */}
-        <div className="p-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-500">
-          <span>Showing 1 to {displayedEmployees.length} of {filteredEmployees.length} entries</span>
-          <div className="flex items-center space-x-1">
-            <button className="px-2.5 py-1 border border-[#E2E8F0] rounded text-slate-400 hover:bg-slate-50 disabled:opacity-50" disabled>
-              Previous
-            </button>
-            <button className="px-2.5 py-1 bg-[#1E40AF] text-white rounded font-bold">
-              1
-            </button>
-            <button className="px-2.5 py-1 border border-[#E2E8F0] rounded text-slate-400 hover:bg-slate-50 disabled:opacity-50" disabled>
-              Next
-            </button>
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                  <button 
+                    onClick={() => { setSelectedEmployee(emp); setProfileTab('onboarding'); }}
+                    title="View Documents & Onboarding Checklist" 
+                    className="p-1.5 hover:bg-blue-100 rounded text-[#1E40AF] transition-colors"
+                  >
+                    <Folder className="w-3.5 h-3.5" />
+                  </button>
+                  <button 
+                    onClick={() => { setSelectedEmployee(emp); setProfileTab('payroll'); }}
+                    title="Banking & Salary Details" 
+                    className="p-1.5 hover:bg-blue-100 rounded text-[#1E40AF] transition-colors"
+                  >
+                    <Building className="w-3.5 h-3.5" />
+                  </button>
+                  <button 
+                    onClick={() => { setSelectedEmployee(emp); setProfileTab('payroll'); }}
+                    title="Salary Slips & Disbursals" 
+                    className="p-1.5 hover:bg-amber-100 rounded text-[#D97706] transition-colors"
+                  >
+                    <Receipt className="w-3.5 h-3.5" />
+                  </button>
+                  <button 
+                    onClick={() => { setSelectedEmployee(emp); setProfileTab('compliance'); }}
+                    title="Food Safety & Health (ISO 22000)" 
+                    className="p-1.5 hover:bg-emerald-100 rounded text-emerald-600 transition-colors"
+                  >
+                    <ShieldAlert className="w-3.5 h-3.5" />
+                  </button>
+                  <button 
+                    onClick={() => { setSelectedEmployee(emp); setProfileTab('exit'); }}
+                    title="Exit Clearance & F&F Settlement" 
+                    className="p-1.5 hover:bg-amber-100 rounded text-amber-700 transition-colors"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                  </button>
+                  {deleteConfirmId === emp.id ? (
+                    <div className="flex items-center space-x-1">
+                      <button
+                        onClick={() => handleDeleteEmployee(emp.id)}
+                        disabled={saving}
+                        className="px-2 py-1 bg-red-600 text-white rounded text-[10px] font-bold hover:bg-red-700 disabled:opacity-50"
+                      >
+                        Confirm
+                      </button>
+                      <button
+                        onClick={() => setDeleteConfirmId(null)}
+                        className="px-2 py-1 border border-slate-200 text-slate-600 rounded text-[10px] font-bold hover:bg-slate-50"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setDeleteConfirmId(emp.id)}
+                      title="Delete Employee"
+                      className="p-1.5 hover:bg-red-100 rounded text-red-500 transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              )
+            )
+          }
+        ]}
+        data={filteredEmployees}
+        title="Enterprise_Workforce_Directory"
+        searchPlaceholder="Search employee name, code, department, branch..."
+        onAdd={!isEmployeeRole ? handleOpenAddModal : null}
+        addLabel="+ Add Employee"
+        actions={
+          <div className="flex flex-wrap items-center gap-1 bg-slate-100 p-1 rounded-lg">
+            {DEPARTMENTS.map(dept => (
+              <button
+                key={dept}
+                onClick={() => setActiveDept(dept)}
+                className={`px-2.5 py-1 rounded text-xs font-bold transition-all ${
+                  activeDept === dept
+                    ? 'bg-[#1E40AF] text-white shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                }`}
+              >
+                {dept}
+              </button>
+            ))}
           </div>
-        </div>
-      </div>
+        }
+      />
+
 
       {/* Edit Employee Modal */}
       {showEditModal && editEmp && (

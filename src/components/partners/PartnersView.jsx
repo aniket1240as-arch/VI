@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '../../services/api';
+import DataTable from '../common/DataTable';
 
 const FALLBACK_PARTNERS = [
   { id: 'P-001', name: 'Al Rawdah Trading LLC', type: 'BUYER', country: 'UAE', tier: 'TIER_1', kyc_status: 'VERIFIED', payment_terms: 'LC 90 Days', credit_limit: '$500,000', email: 'trade@alrawdah.ae', phone: '+971-4-3221100' },
@@ -193,103 +194,109 @@ export default function PartnersView() {
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white rounded-xl border border-[#E2E8F0] shadow-card p-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          {/* Type Tabs */}
+      {/* Partner Registry Table */}
+      <DataTable
+        columns={[
+          {
+            key: 'id',
+            header: 'PARTNER ID',
+            render: (val) => <span className="font-mono text-slate-500 font-bold">{val}</span>
+          },
+          {
+            key: 'name',
+            header: 'COMPANY / PARTNER NAME',
+            render: (val) => <strong className="text-slate-900">{val}</strong>
+          },
+          {
+            key: 'type',
+            header: 'PARTNER TYPE',
+            render: (val) => (
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${typeBadge(val)}`}>
+                {val}
+              </span>
+            )
+          },
+          {
+            key: 'country',
+            header: 'COUNTRY',
+            render: (val) => <span className="text-slate-700 font-medium">{val}</span>
+          },
+          {
+            key: 'tier',
+            header: 'TIER',
+            render: (val) => <span className="text-slate-600 font-semibold">{val}</span>
+          },
+          {
+            key: 'kyc_status',
+            header: 'KYC STATUS',
+            render: (val) => (
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${kycBadge(val)}`}>
+                {val}
+              </span>
+            )
+          },
+          {
+            key: 'payment_terms',
+            header: 'PAYMENT TERMS',
+            render: (val) => <span className="text-slate-600">{val}</span>
+          },
+          {
+            key: 'credit_limit',
+            header: 'CREDIT LIMIT',
+            render: (val) => <span className="font-semibold text-slate-800 font-mono">{val}</span>
+          },
+          {
+            key: 'email',
+            header: 'CONTACT EMAIL',
+            render: (val) => <span className="text-slate-600 text-xs">{val}</span>
+          },
+          {
+            key: 'phone',
+            header: 'PHONE',
+            render: (val) => <span className="font-mono text-slate-500 text-xs">{val || '—'}</span>
+          },
+          {
+            key: 'actions',
+            header: 'ACTIONS',
+            sortable: false,
+            render: (_, partner) => (
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => openEditModal(partner)}
+                  className="px-2.5 py-1 bg-[#EFF6FF] text-[#1E40AF] border border-[#BFDBFE] rounded text-[11px] font-bold hover:bg-blue-100 transition-colors"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => setDeleteTarget(partner)}
+                  className="px-2.5 py-1 bg-red-50 text-red-600 border border-red-200 rounded text-[11px] font-bold hover:bg-red-100 transition-colors"
+                >
+                  Delete
+                </button>
+              </div>
+            )
+          }
+        ]}
+        data={partners}
+        title="Partners_Directory"
+        searchPlaceholder="Search partner name, country, terms, email..."
+        onAdd={openAddModal}
+        addLabel="+ Add Partner"
+        actions={
           <div className="flex gap-1">
             {TYPE_TABS.map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-1.5 rounded-md text-xs font-semibold uppercase tracking-wider transition-colors ${activeTab === tab ? 'bg-[#1E40AF] text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'}`}
+                className={`px-3 py-1 rounded text-xs font-semibold uppercase tracking-wider transition-colors ${activeTab === tab ? 'bg-[#1E40AF] text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
               >
                 {tab}
               </button>
             ))}
           </div>
-          {/* Search */}
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">🔍</span>
-            <input
-              type="text"
-              placeholder="Search by name or country..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="pl-8 pr-3 py-2 border border-[#E2E8F0] rounded-md text-xs focus:outline-none focus:border-[#1E40AF] w-64 font-medium"
-            />
-          </div>
-        </div>
-      </div>
+        }
+      />
 
-      {/* Table */}
-      <div className="bg-white rounded-xl border border-[#E2E8F0] shadow-card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs">
-            <thead>
-              <tr className="bg-[#FAFAFA] border-b border-[#E2E8F0]">
-                {['ID', 'Name', 'Type', 'Country', 'Tier', 'KYC Status', 'Payment Terms', 'Credit Limit', 'Email', 'Actions'].map(col => (
-                  <th key={col} className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-600 whitespace-nowrap">{col}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                Array.from({ length: 4 }).map((_, i) => (
-                  <tr key={i} className="border-b border-[#E2E8F0]">
-                    {Array.from({ length: 10 }).map((_, j) => (
-                      <td key={j} className="px-4 py-3">
-                        <div className="animate-pulse bg-slate-100 rounded h-4 w-full" />
-                      </td>
-                    ))}
-                  </tr>
-                ))
-              ) : filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={10} className="px-4 py-12 text-center text-slate-400 font-medium">
-                    No partners found.
-                  </td>
-                </tr>
-              ) : filtered.map(partner => (
-                <tr key={partner.id} className="border-b border-[#E2E8F0] hover:bg-blue-50/40 transition-colors">
-                  <td className="px-4 py-3 font-mono text-slate-500">{partner.id}</td>
-                  <td className="px-4 py-3 font-semibold text-slate-900 whitespace-nowrap">{partner.name}</td>
-                  <td className="px-4 py-3">
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${typeBadge(partner.type)}`}>{partner.type}</span>
-                  </td>
-                  <td className="px-4 py-3 text-slate-700">{partner.country}</td>
-                  <td className="px-4 py-3 text-slate-600">{partner.tier}</td>
-                  <td className="px-4 py-3">
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${kycBadge(partner.kyc_status)}`}>{partner.kyc_status}</span>
-                  </td>
-                  <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{partner.payment_terms}</td>
-                  <td className="px-4 py-3 font-semibold text-slate-700">{partner.credit_limit}</td>
-                  <td className="px-4 py-3 text-slate-600">{partner.email}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => openEditModal(partner)}
-                        className="px-3 py-1 bg-[#EFF6FF] text-[#1E40AF] border border-[#BFDBFE] rounded-md text-[10px] font-semibold hover:bg-blue-100 transition-colors"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => setDeleteTarget(partner)}
-                        className="px-3 py-1 bg-red-50 text-red-600 border border-red-200 rounded-md text-[10px] font-semibold hover:bg-red-100 transition-colors"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <div className="px-4 py-2 bg-[#FAFAFA] border-t border-[#E2E8F0] text-xs text-slate-400 font-medium">
-          Showing {filtered.length} of {partners.length} partners
-        </div>
-      </div>
 
       {/* Add / Edit Modal */}
       {showModal && (
